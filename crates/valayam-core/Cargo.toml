@@ -42,7 +42,7 @@ tokio-rustls = { workspace = true }
 rand = { workspace = true }
 hmac = { workspace = true }
 tracing = "0.1.44"
-tracing-opentelemetry = "0.22"
+tracing-opentelemetry = "0.33"
 http = { workspace = true }
 tonic = { workspace = true }
 prost = { workspace = true }
@@ -53,22 +53,22 @@ sourcemap = { workspace = true }
 zip.workspace = true
 toml = { workspace = true }
 lazy_static = { workspace = true }
-wasmtime = "18.0.2"
-wasmtime-wasi = "18.0.2"
+wasmtime = "43.0.2"
+wasmtime-wasi = "47.0.3"
 uuid = { version = "1.24.0", features = ["v4"] }
 dirs = "6.0.0"
-ed25519-dalek = { version = "2.1.1", features = ["rand_core"] }
+ed25519-dalek = { version = "3.0.0", features = ["rand_core"] }
 rand_core = { version = "0.6.4", features = ["std"] }
-notify = "6.1.1"
-opentelemetry = { version = "0.21.0", features = ["trace"] }
+notify = "8.2.0"
+opentelemetry = { version = "0.32.0", features = ["trace"] }
 petgraph = { version = "0.8.3", features = ["serde-1"] }
 colored = "3.1.1"
 hex = { workspace = true }
-axum = "0.7"
-jsonwebtoken = "9.3"
+axum = "0.8"
+jsonwebtoken = "11.0"
 dashmap = "6.2.1"
-rcgen = "0.12"
-hyper = { version = "0.14", features = ["full"] }
+rcgen = "0.14"
+hyper = { version = "1.10", features = ["full"] }
 time = "0.3.54"
 valayam-common = { version = "0.1.0", path = "../valayam-common" }
 [features]
@@ -81,7 +81,7 @@ name = "crawler_bench"
 harness = false
 
 [dev-dependencies]
-criterion = { version = "0.5", features = ["async_tokio"] }
+criterion = { version = "0.8", features = ["async_tokio"] }
 mockito = "1.7.2"
 tempfile = { workspace = true }
 wat = "1.253.0"
