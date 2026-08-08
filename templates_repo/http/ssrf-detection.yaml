@@ -1,0 +1,34 @@
+id: http-ssrf-detection
+info:
+  name: "Server-Side Request Forgery (SSRF) Detection"
+  severity: "High"
+  description: "Detects SSRF vulnerabilities by making the server request internal resources and analyzing responses."
+  compliance:
+    owasp: "A10:2021"
+    cwe: "CWE-918"
+requests:
+  - method: GET
+    path: "/"
+    attack: inject
+    inject_in: query
+    payloads:
+      - "http://169.254.169.254/latest/meta-data/"
+      - "http://127.0.0.1:22/"
+      - "http://localhost:6379/"
+    headers:
+      User-Agent: "Valayam-Scanner/2.0"
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "ami-id"
+          - "instance-id"
+          - "public-keys"
+          - "SSH-2.0-OpenSSH"
+          - "redis_version"
+      - type: status
+        part: status
+        status:
+          - 200
+          - 502
+    matcher_condition: and

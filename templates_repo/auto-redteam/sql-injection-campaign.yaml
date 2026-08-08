@@ -1,0 +1,14 @@
+id: auto-redteam-sqli
+info:
+  name: "Auto Red Team - SQL Injection Campaign"
+  severity: "Critical"
+  description: "Automated red team campaign targeting SQL injection vulnerabilities across the attack surface."
+  compliance:
+    mitre-attack: "T1190"
+auto_redteam:
+  - target: "{{Hostname}}"
+    objective: "sql_injection"
+  - target: "{{Hostname}}"
+    objective: "xss_scan"
+  - target: "{{Hostname}}"
+    objective: "idor_check"

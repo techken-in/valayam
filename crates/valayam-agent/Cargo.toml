@@ -1,0 +1,26 @@
+[package]
+license = "Apache-2.0"
+name = "valayam-agent"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+tokio = { workspace = true }
+tokio-util = { version = "0.7", features = ["rt"] }
+reqwest = { workspace = true, features = ["json"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+tracing = "0.1"
+colored = "3.1.1"
+uuid = { version = "1.24", features = ["v4"] }
+chrono = { workspace = true }
+
+valayam-config = { path = "../valayam-config" }
+valayam-cli = { path = "../valayam-cli" }
+clap = { workspace = true, features = ["derive"] }
+hmac.workspace = true
+sha2.workspace = true
+tracing-subscriber = "0.3.23"
+valayam-engine.workspace = true
+hex.workspace = true

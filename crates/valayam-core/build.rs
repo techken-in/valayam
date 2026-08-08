@@ -1,0 +1,213 @@
+//! Build script for valayam-core.
+//!
+//! 1. Compiles protobuf definitions.
+//! 2. Walks `templates/default/` for `.nuclei-template.yaml` files, hashes them,
+//!    and generates a module so the crate can self-check which templates are
+//!    available at compile time.
+
+use std::collections::HashMap;
+use std::fs;
+use std::hash::{DefaultHasher, Hash, Hasher};
+use std::io::Write;
+use std::path::Path;
+
+const TEMPLATES_DIR: &str = "templates/default";
+const CACHE_FILE: &str = ".template_cache";
+const OUTPUT_FILE: &str = "src/generated/template_index.rs";
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // --- Template indexing ---
+    let templates_dir = Path::new(TEMPLATES_DIR);
+
+    if !templates_dir.exists() {
+        // No templates directory yet; emit an empty index and exit.
+        emit_empty_index()?;
+        return Ok(());
+    }
+
+    println!("cargo:rerun-if-changed={}", TEMPLATES_DIR);
+
+    // Walk all YAML files and compute their hashes.
+    let mut template_hashes: HashMap<String, u64> = HashMap::new();
+    collect_templates(templates_dir, &mut template_hashes)?;
+
+    // Load the previous cached hashes.
+    let previous = load_cache(CACHE_FILE);
+
+    // Determine whether the cache is still valid.
+    let cache_valid = previous
+        .as_ref()
+        .map(|prev| *prev == template_hashes)
+        .unwrap_or(false);
+
+    if !cache_valid {
+        // Write the new cache.
+        save_cache(CACHE_FILE, &template_hashes)?;
+
+        // Emit a `cargo:rerun-if-changed` for every individual template file so
+        // Cargo knows to re-run this script when any single template changes.
+        for path in template_hashes.keys() {
+            println!("cargo:rerun-if-changed={}/{}", TEMPLATES_DIR, path);
+        }
+
+        // Generate the Rust source file.
+        generate_index(&template_hashes)?;
+    }
+
+    Ok(())
+}
+
+/// Recursively walk `dir`, collecting paths and hashes of every
+/// `.nuclei-template.yaml` file.
+fn collect_templates(
+    dir: &Path,
+    out: &mut HashMap<String, u64>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    if !dir.is_dir() {
+        return Ok(());
+    }
+
+    for entry in fs::read_dir(dir)? {
+        let entry = entry?;
+        let path = entry.path();
+
+        if path.is_dir() {
+            collect_templates(&path, out)?;
+        } else if is_template_file(&path) {
+            let relative = path
+                .strip_prefix(TEMPLATES_DIR)
+                .unwrap_or(&path)
+                .to_string_lossy()
+                .replace('\\', "/");
+
+            let content = fs::read(&path)?;
+            let hash = compute_hash(&content);
+
+            out.insert(relative, hash);
+        }
+    }
+
+    Ok(())
+}
+
+/// Returns `true` if `path` has a `.yaml` or `.yml` extension AND its
+/// stem contains the literal string `"nuclei-template"`.
+fn is_template_file(path: &Path) -> bool {
+    match path.extension() {
+        Some(ext) if ext == "yaml" || ext == "yml" => {}
+        _ => return false,
+    }
+
+    // Also check that the filename (stem) contains the marker.
+    path.file_stem()
+        .and_then(|s| s.to_str())
+        .map(|s| s.contains("nuclei-template"))
+        .unwrap_or(false)
+}
+
+/// Compute a 64-bit hash from the raw bytes of a template file.
+/// Uses `std::hash::DefaultHasher` so no external crate is needed.
+fn compute_hash(bytes: &[u8]) -> u64 {
+    let mut hasher = DefaultHasher::new();
+    bytes.hash(&mut hasher);
+    hasher.finish()
+}
+
+/// Load a previously saved cache file into a `HashMap`.
+fn load_cache(path: &str) -> Option<HashMap<String, u64>> {
+    let content = fs::read_to_string(path).ok()?;
+    let mut map = HashMap::new();
+    for line in content.lines() {
+        let mut parts = line.splitn(2, '\t');
+        if let (Some(key), Some(value)) = (parts.next(), parts.next()) {
+            if let Ok(h) = value.parse::<u64>() {
+                map.insert(key.to_string(), h);
+            }
+        }
+    }
+    Some(map)
+}
+
+/// Persist the template-hashes map to a cache file (one `path\thash` per line).
+fn save_cache(path: &str, hashes: &HashMap<String, u64>) -> Result<(), Box<dyn std::error::Error>> {
+    let mut content = String::new();
+    // Sort keys for deterministic output.
+    let mut keys: Vec<&String> = hashes.keys().collect();
+    keys.sort();
+    for key in &keys {
+        if let Some(h) = hashes.get(*key) {
+            content.push_str(&format!("{}\t{}\n", key, h));
+        }
+    }
+    fs::write(path, content)?;
+    Ok(())
+}
+
+/// Generate the `template_index.rs` module that embeds the list of available
+/// templates as a `&[(&str, u64)]` slice so the crate can query it at runtime.
+fn generate_index(hashes: &HashMap<String, u64>) -> Result<(), Box<dyn std::error::Error>> {
+    let out_dir = Path::new(OUTPUT_FILE).parent().unwrap();
+    fs::create_dir_all(out_dir)?;
+
+    let mut file = fs::File::create(OUTPUT_FILE)?;
+
+    writeln!(
+        file,
+        "/// Auto-generated by build.rs — do not edit manually."
+    )?;
+    writeln!(file, "///")?;
+    writeln!(
+        file,
+        "/// Maps relative template paths to their content hashes."
+    )?;
+    writeln!(file)?;
+
+    // Emit the list as a constant array of (path, hash) tuples.
+    writeln!(file, "pub const TEMPLATE_INDEX: &[(&str, u64)] = &[")?;
+
+    let mut keys: Vec<&String> = hashes.keys().collect();
+    keys.sort();
+    for key in keys {
+        if let Some(h) = hashes.get(key) {
+            writeln!(file, "    ({:?}, {}),", key, h)?;
+        }
+    }
+
+    writeln!(file, "];")?;
+
+    // Emit a helper that returns the hash of a specific template by path.
+    writeln!(file)?;
+    writeln!(
+        file,
+        "/// Return the cached hash for a template path, or `None` if unknown."
+    )?;
+    writeln!(file, "pub fn lookup_template(path: &str) -> Option<u64> {{")?;
+    writeln!(
+        file,
+        "    TEMPLATE_INDEX.iter().find(|(p, _)| *p == path).map(|(_, h)| *h)"
+    )?;
+    writeln!(file, "}}")?;
+
+    Ok(())
+}
+
+/// When no template directory exists, emit an empty index so the crate compiles
+/// without requiring templates at build time.
+fn emit_empty_index() -> Result<(), Box<dyn std::error::Error>> {
+    let out_dir = Path::new(OUTPUT_FILE).parent().unwrap();
+    fs::create_dir_all(out_dir)?;
+
+    let mut file = fs::File::create(OUTPUT_FILE)?;
+
+    writeln!(
+        file,
+        "/// Auto-generated by build.rs — empty because no templates directory was found."
+    )?;
+    writeln!(file, "pub const TEMPLATE_INDEX: &[(&str, u64)] = &[];")?;
+    writeln!(
+        file,
+        "pub fn lookup_template(_path: &str) -> Option<u64> {{ None }}"
+    )?;
+
+    Ok(())
+}

@@ -1,0 +1,31 @@
+id: script-multi-step-demo
+info:
+  name: "Multi-Step Script Demo"
+  severity: "Info"
+  description: "Demonstrates Rhai scripting for chained HTTP requests."
+scripts:
+  - engine: "rhai"
+    source:
+      code: |
+        // Step 1: Make an initial request and verify it succeeds
+        let resp = http_get(target_url + "/get?step=1&marker=valayam_script");
+        log("Step 1 status: " + resp.status);
+
+        if resp.status != 200 {
+          return false;
+        }
+
+        // Step 2: Extract a value from the response using regex
+        let has_marker = regex_match(resp.body, "valayam_script");
+        log("Step 1 marker found: " + has_marker);
+
+        if !has_marker {
+          return false;
+        }
+
+        // Step 3: Chain a second request
+        let resp2 = http_get(target_url + "/get?step=2&ref=chained_from_step1");
+        log("Step 2 status: " + resp2.status);
+
+        // Final verdict: both requests must succeed
+        resp2.status == 200

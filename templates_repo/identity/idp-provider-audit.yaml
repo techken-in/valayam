@@ -1,0 +1,14 @@
+id: idp-provider-audit
+info:
+  name: "Identity Provider (IdP) Security Audit"
+  severity: "High"
+  description: "Audits SAML/OIDC identity provider configurations for common security misconfigurations."
+  compliance:
+    cwe: "CWE-287"
+idp_audit:
+  - target: "https://{{Hostname}}"
+    provider: "azure_ad"
+  - target: "https://{{Hostname}}"
+    provider: "okta"
+  - target: "https://{{Hostname}}"
+    provider: "saml_generic"

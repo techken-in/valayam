@@ -1,0 +1,11 @@
+version: v2
+name: buf.build/valayam/valayam-proto
+lint:
+  use:
+    - DEFAULT
+  except:
+    - SERVICE_SUFFIX
+    - PACKAGE_VERSION_SUFFIX
+breaking:
+  use:
+    - FILE

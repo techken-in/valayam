@@ -1,0 +1,11 @@
+id: container-dockerfile-sec
+info:
+  name: "Container Dockerfile Security Audit"
+  severity: "Medium"
+  description: "Audits Dockerfiles and container configurations for security best practices and misconfigurations."
+container_audit:
+  - target_image: "{{ImageName}}"
+    checks:
+      - "docker-bench"
+      - "snyk"
+      - "grype"

@@ -1,0 +1,20 @@
+id: browser-login-flow-audit
+info:
+  name: "Browser Login Flow Security Audit"
+  severity: "High"
+  description: "Drives a headless browser through the login flow to audit authentication logic and session handling."
+browser_audit:
+  - target: "https://{{Hostname}}"
+    script: "login.py"
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "success"
+          - "Logged in"
+          - "Welcome"
+      - type: status
+        part: status
+        status:
+          - 200
+    matcher_condition: or

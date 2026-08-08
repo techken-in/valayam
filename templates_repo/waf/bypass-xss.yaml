@@ -1,0 +1,21 @@
+id: waf-bypass-xss
+info:
+  name: "WAF Bypass via XSS Payloads"
+  severity: "High"
+  description: "Tests WAF rules by sending XSS payloads with encoding and obfuscation bypass techniques."
+  compliance:
+    owasp: "A03:2021"
+    cwe: "CWE-79"
+waf_bypass_verify:
+  - target: "{{Hostname}}"
+    payloads:
+      - "<SCRIPT>alert(1)</SCRIPT>"
+      - "<img src=x onerror=alert(1)>"
+      - "<svg/onload=alert(1)>"
+      - "%3Cscript%3Ealert(1)%3C/script%3E"
+      - "<script>eval(atob('YWxlcnQoMSk='))</script>"
+      - "<<script>alert(1)</script>"
+      - "<script>\\u0061lert(1)</script>"
+      - "<scr\\0ipt>alert(1)</scr\\0ipt>"
+      - "<script>window['al' + 'ert'](1)</script>"
+      - "<a onmouseover=alert(1)>test</a>"

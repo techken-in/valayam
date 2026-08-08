@@ -1,0 +1,7 @@
+id: sourcemap-audit
+info:
+  name: Source Map Secrets Exposure
+  severity: CRITICAL
+  description: Reconstructs frontend source code from sourcemaps to search for exposed environmental variables.
+deep_analysis:
+  - analysis_type: "source_map"

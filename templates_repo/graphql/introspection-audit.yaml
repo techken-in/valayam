@@ -1,0 +1,12 @@
+id: graphql-introspection-audit
+info:
+  name: "GraphQL Introspection and Schema Audit"
+  severity: "High"
+  description: "Ensures GraphQL introspection is disabled on production endpoints to prevent schema leakage."
+  compliance:
+    owasp: "A01:2021"
+    cwe: "CWE-200"
+graphql_audit:
+  - target: "https://{{Hostname}}/graphql"
+    introspection: true
+    mutate: false

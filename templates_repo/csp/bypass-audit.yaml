@@ -1,0 +1,14 @@
+id: csp-bypass-audit
+info:
+  name: "Content Security Policy (CSP) Bypass Audit"
+  severity: "High"
+  description: "Audits CSP headers for bypass vulnerabilities using known CSP bypass techniques with strict mode."
+  compliance:
+    owasp: "A05:2021"
+    cwe: "CWE-693"
+csp_audit:
+  - target: "https://{{Hostname}}"
+    strict_mode: true
+
+  - target: "https://{{Hostname}}"
+    strict_mode: false

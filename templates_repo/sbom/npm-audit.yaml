@@ -1,0 +1,8 @@
+id: sbom-npm-audit
+info:
+  name: "NPM SBOM Dependency Audit"
+  severity: "High"
+  description: "Audits Node.js package.json dependencies for known vulnerabilities via SBOM analysis."
+sbom_audit:
+  - target: "{{Hostname}}"
+    type: "package.json"

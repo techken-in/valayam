@@ -1,0 +1,10 @@
+id: subdomain-takeover-detect
+info:
+  name: "Subdomain Takeover Verification"
+  severity: "High"
+  description: "Verifies if a specific subdomain is vulnerable to takeover by checking for unclaimed service responses."
+  compliance:
+    cwe: "CWE-656"
+    owasp: "A01:2021"
+subdomain_takeover:
+  - target: "{{Hostname}}"

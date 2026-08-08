@@ -1,0 +1,23 @@
+[package]
+license = "Apache-2.0"
+name = "valayam-crawler"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+valayam-network = { workspace = true }
+valayam-engine = { workspace = true }
+valayam-models = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+scraper.workspace = true
+regex.workspace = true
+serde_json.workspace = true
+serde.workspace = true
+url.workspace = true
+tracing = "0.1"
+async-trait.workspace = true
+uuid = { version = "1.24.0", features = ["v4"] }
+
+[dev-dependencies]
+tempfile.workspace = true
+anyhow.workspace = true

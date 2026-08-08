@@ -1,0 +1,12 @@
+id: implant-payload-deploy
+info:
+  name: "Automated Payload Deployment Check"
+  severity: "Critical"
+  description: "Tests payload deployment capabilities against target for red team operations."
+  compliance:
+    mitre-attack: "T1204"
+implant_deploy:
+  - target: "{{Hostname}}"
+    payload_name: "reverse_shell"
+  - target: "{{Hostname}}"
+    payload_name: "beacon"

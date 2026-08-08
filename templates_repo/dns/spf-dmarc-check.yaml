@@ -1,0 +1,38 @@
+id: dns-spf-dmarc-check
+info:
+  name: "DNS SPF/DMARC/DKIM Security Check"
+  severity: "Medium"
+  description: "Queries DNS TXT records for SPF, DMARC, and DKIM configurations to check email security posture."
+  compliance:
+    cwe: "CWE-200"
+dns:
+  - domain: "{{Hostname}}"
+    query_type: "TXT"
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "v=spf1"
+          - "v=DMARC1"
+          - "v=DKIM1"
+
+  - domain: "_dmarc.{{Hostname}}"
+    query_type: "TXT"
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "v=DMARC1"
+      - type: regex
+        part: body
+        regex:
+          - "p=(none|quarantine|reject)"
+    matcher_condition: or
+
+  - domain: "default._domainkey.{{Hostname}}"
+    query_type: "TXT"
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "v=DKIM1"

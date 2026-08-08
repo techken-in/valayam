@@ -1,0 +1,12 @@
+[package]
+license = "Apache-2.0"
+name = "valayam-proto"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+tonic = { workspace = true }
+prost = { workspace = true }
+
+[build-dependencies]
+tonic-build = { workspace = true }

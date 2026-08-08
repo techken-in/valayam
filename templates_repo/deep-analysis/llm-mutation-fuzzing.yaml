@@ -1,0 +1,11 @@
+id: deep-analysis-llm-mutation
+info:
+  name: "LLM-Powered Payload Mutation"
+  severity: "Critical"
+  description: "Uses LLM to generate mutated WAF-bypass payload variants for deep injection testing."
+  compliance:
+    owasp: "A03:2021"
+deep_analysis:
+  - target: "https://{{Hostname}}"
+    analysis_type: "llm_mutation"
+    prompt: "Generate SQL injection variants to bypass WAF"

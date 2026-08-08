@@ -1,0 +1,15 @@
+id: serverless-iam-scan
+info:
+  name: "Serverless IAM Security Scan"
+  severity: "High"
+  description: "Audits serverless framework configurations for over-privileged IAM roles and permissions."
+  compliance:
+    cwe: "CWE-1220"
+serverless_audit:
+  - target: "{{Hostname}}"
+    action: "iam_scan"
+    framework: "serverless"
+
+  - target: "{{Hostname}}"
+    action: "trigger_scan"
+    framework: "aws_sam"

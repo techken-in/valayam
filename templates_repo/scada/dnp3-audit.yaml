@@ -1,0 +1,11 @@
+id: scada-dnp3-audit
+info:
+  name: "SCADA DNP3 Protocol Audit"
+  severity: "High"
+  description: "Audits DNP3 endpoints for unauthorized access and protocol misconfiguration."
+  compliance:
+    cwe: "CWE-306"
+    ics: "true"
+scada_audit:
+  - target: "{{Hostname}}:20000"
+    protocol: "dnp3"

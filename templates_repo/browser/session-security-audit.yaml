@@ -1,0 +1,20 @@
+id: browser-session-security
+info:
+  name: "Browser Session Security Audit"
+  severity: "Medium"
+  description: "Drives a browser to test session cookie security attributes and DOM-based XSS."
+browser_audit:
+  - target: "https://{{Hostname}}"
+    script: "session_check.py"
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "Secure"
+          - "HttpOnly"
+          - "SameSite"
+      - type: status
+        part: status
+        status:
+          - 200
+    matcher_condition: or

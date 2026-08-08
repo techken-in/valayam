@@ -1,0 +1,35 @@
+id: script-advanced-auth-bypass
+info:
+  name: "Advanced Authentication Bypass Script"
+  severity: "Critical"
+  description: "Multi-step Rhai script that performs session injection and privilege escalation detection."
+scripts:
+  - engine: "rhai"
+    source:
+      code: |
+        let base = target_url;
+        let step1 = http_get(base + "/api/user/me");
+        log("Initial access: " + step1.status);
+
+        if step1.status != 401 {
+          return false;
+        }
+
+        // Try admin cookie injection
+        let resp = http_get_with_headers(base + "/api/admin/users", #{
+          "Cookie": "role=admin; session=../../etc/passwd",
+          "X-Forwarded-For": "127.0.0.1"
+        });
+        log("Admin bypass attempt: " + resp.status);
+
+        // Try privilege escalation via parameter pollution
+        let resp2 = http_get(base + "/api/user/me?role=user&role=admin");
+        log("Parameter pollution attempt: " + resp2.status);
+
+        // If any attempt succeeds, alert
+        if resp.status == 200 || resp2.status == 200 {
+          log("VULNERABLE: Authentication bypass detected!");
+          return true;
+        }
+
+        false

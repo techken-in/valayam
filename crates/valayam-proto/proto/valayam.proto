@@ -1,0 +1,41 @@
+syntax = "proto3";
+package valayam;
+
+service Scanner {
+    rpc Scan (ScanRequest) returns (ScanResponse);
+    rpc StreamTelemetry (stream TelemetryEvent) returns (TelemetryResponse);
+
+    // Control Plane RPCs
+    rpc PauseScan (ControlRequest) returns (ControlResponse);
+    rpc ResumeScan (ControlRequest) returns (ControlResponse);
+    rpc CancelScan (ControlRequest) returns (ControlResponse);
+}
+
+message ScanRequest {
+    string template_yaml = 1;
+    string target_url = 2;
+}
+
+message ScanResponse {
+    // JSON-serialized ScanResult
+    repeated string findings_json = 1; 
+}
+
+message TelemetryEvent {
+    string event_type = 1;
+    string payload_json = 2;
+}
+
+message TelemetryResponse {
+    bool received = 1;
+}
+
+message ControlRequest {
+    // Optional identifier if we want to control a specific scan in a multi-tenant worker
+    string scan_id = 1; 
+}
+
+message ControlResponse {
+    bool success = 1;
+    string message = 2;
+}

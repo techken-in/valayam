@@ -1,0 +1,15 @@
+id: dns-cname-takeover
+info:
+  name: "DNS CNAME Takeover Check"
+  severity: "High"
+  description: "Detects if the target domain has a CNAME record pointing to an unclaimed or vulnerable service (like Github Pages, Heroku, etc)."
+dns:
+  - domain: "{{Hostname}}"
+    query_type: "CNAME"
+    matchers:
+      - type: "regex"
+        part: "body"
+        regex:
+          - "\\.github\\.io$"
+          - "\\.herokuapp\\.com$"
+          - "\\.s3\\.amazonaws\\.com$"

@@ -1,0 +1,73 @@
+version: "3.9"
+
+services:
+  # Prometheus metrics collector
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+    networks:
+      - valayam-net
+
+  # Grafana dashboard
+  grafana:
+    image: grafana/grafana:10.4.0
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./dashboards/valayam.json:/var/lib/grafana/dashboards/valayam.json:ro
+      - ./docker/grafana-datasource.yml:/etc/grafana/provisioning/datasources/prometheus.yml:ro
+      - ./docker/grafana-dashboard.yml:/etc/grafana/provisioning/dashboards/valayam.yml:ro
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    networks:
+      - valayam-net
+    depends_on:
+      - prometheus
+
+  # OpenTelemetry collector for traces (optional)
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.96.0
+    ports:
+      - "4317:4317"   # gRPC
+      - "4318:4318"   # HTTP
+    volumes:
+      - ./docker/otel-config.yml:/etc/otel/config.yml:ro
+    command: ["--config=/etc/otel/config.yml"]
+    networks:
+      - valayam-net
+
+  # Worker node (scalable)
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "50051"  # gRPC control plane (dynamic host port per worker)
+    volumes:
+      - ./templates_repo:/valayam/templates_repo:ro
+      - ./plugins-wasm/bin:/valayam/plugins:ro
+    environment:
+      - RUST_LOG=info
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+    entrypoint: ["valayam", "serve"]
+    networks:
+      - valayam-net
+    depends_on:
+      - otel-collector
+
+networks:
+  valayam-net:
+    driver: bridge
+
+volumes:
+  prometheus_data:
+  grafana_data:

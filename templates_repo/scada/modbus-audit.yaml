@@ -1,0 +1,13 @@
+id: scada-modbus-audit
+info:
+  name: "SCADA Modbus Protocol Audit"
+  severity: "High"
+  description: "Audits Modbus TCP endpoints for accessibility, function code exposure, and unit identifier enumeration."
+  compliance:
+    cwe: "CWE-306"
+    ics: "true"
+scada_audit:
+  - target: "{{Hostname}}:502"
+    protocol: "modbus"
+  - target: "{{Hostname}}:5020"
+    protocol: "modbus"

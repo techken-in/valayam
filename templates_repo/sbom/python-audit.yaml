@@ -1,0 +1,8 @@
+id: sbom-python-audit
+info:
+  name: "Python SBOM Dependency Audit"
+  severity: "High"
+  description: "Audits Python requirements.txt dependencies for known vulnerabilities via SBOM analysis."
+sbom_audit:
+  - target: "{{Hostname}}"
+    type: "requirements.txt"

@@ -1,0 +1,18 @@
+id: juice-shop-ftp-exposure
+info:
+  name: OWASP Juice Shop FTP Directory Exposure
+  severity: High
+  description: Detects the exposed /ftp directory in Juice Shop
+requests:
+  - method: GET
+    path: /ftp
+    matchers:
+      - type: status
+        part: status
+        status:
+          - 200
+      - type: regex
+        part: body
+        regex:
+          - "acquisitions.md"
+          - "legal.md"

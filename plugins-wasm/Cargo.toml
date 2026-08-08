@@ -1,0 +1,44 @@
+[workspace]
+members = [
+    "api-audit",
+    "browser-audit",
+    "cloud-audit",
+    "code-audit",
+    "cors-audit",
+    "csp-audit",
+    "dependency-audit",
+    "dom-redirect-audit",
+    "graphql-audit",
+    "grpc-audit",
+    "header-scorecard",
+    "iac-audit",
+    "iot-audit",
+    "mobile-audit",
+    "oauth-audit",
+    "pii-leak-audit",
+    "recon-audit",
+    "reputation-audit",
+    "sbom-audit",
+    "schema-drift",
+    "specialized-audit",
+    "threat-audit",
+    "waf-bypass-verify",
+]
+exclude = [
+    "bin",
+    "test-runner"
+]
+resolver = "2"
+
+[profile.release]
+strip = true      # Automatically strip debug symbols from the binary
+opt-level = "z"   # Optimize for size rather than speed
+lto = true        # Link Time Optimization (removes dead code across dependencies)
+codegen-units = 1 # Better optimizations at the cost of slower compile times
+panic = "abort"   # WASM doesn't support stack unwinding well
+
+[workspace.dependencies]
+valayam-plugin-sdk = { path = "../crates/valayam-plugin-sdk" }
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+extism-pdk = "1.4.1"

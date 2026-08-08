@@ -1,0 +1,12 @@
+id: web3-rpc-fuzzing
+info:
+  name: "Web3 RPC Endpoint Security Audit"
+  severity: "High"
+  description: "Fuzzes Web3 JSON-RPC endpoints and performs static analysis on smart contract bytecode."
+  compliance:
+    cwe: "CWE-345"
+web3_audit:
+  - rpc_endpoint: "https://{{Hostname}}/rpc"
+    action: "fuzz_rpc"
+  - bytecode: "{{Bytecode}}"
+    action: "static_analyze"

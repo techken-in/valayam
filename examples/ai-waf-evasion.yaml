@@ -1,0 +1,8 @@
+id: ai-waf-evasion
+info:
+  name: AI-Driven WAF Evasion
+  severity: CRITICAL
+  description: Leverages a local LLM to dynamically mutate payloads and bypass WAFs.
+deep_analysis:
+  - analysis_type: "llm_mutation"
+    prompt: "Mutate this payload to bypass a standard WAF: <script>alert(1)</script>"

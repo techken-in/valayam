@@ -1,0 +1,39 @@
+id: dns-subdomain-takeover
+info:
+  name: "DNS Subdomain Takeover Detection"
+  severity: "High"
+  description: "Detects dangling DNS records pointing to unclaimed or expired cloud services."
+  compliance:
+    cwe: "CWE-656"
+dns:
+  - domain: "{{Hostname}}"
+    query_type: "CNAME"
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "\\.github\\.io"
+          - "\\.herokuapp\\.com"
+          - "\\.s3\\.amazonaws\\.com"
+          - "\\.s3-website[^.]*\\.amazonaws\\.com"
+          - "\\.cloudfront\\.net"
+          - "\\.azurewebsites\\.net"
+          - "\\.trafficmanager\\.net"
+          - "\\.elasticbeanstalk\\.com"
+          - "\\.netlify\\.com"
+          - "\\.firebaseapp\\.com"
+          - "\\.pagerduty\\.com"
+          - "\\.statuspage\\.io"
+          - "\\.atlassian\\.net"
+          - "\\.freshdesk\\.com"
+          - "\\.zendesk\\.com"
+
+  - domain: "{{Hostname}}"
+    query_type: "NS"
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "dns\\.acomhal\\.net"
+          - "expired\\."
+          - "\\.unclaimed\\."

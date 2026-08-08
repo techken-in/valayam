@@ -1,0 +1,15 @@
+id: tls-cert-audit
+info:
+  name: "TLS Certificate Weakness Check"
+  severity: "Medium"
+  description: "Checks for expired certs, weak ciphers, and self-signed certificates."
+tls:
+  - host: "{{Hostname}}"
+    port: 443
+    matchers:
+      - type: "expired"
+        part: "cert"
+      - type: "weak_cipher"
+        part: "cert"
+      - type: "self_signed"
+        part: "cert"

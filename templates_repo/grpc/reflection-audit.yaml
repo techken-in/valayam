@@ -1,0 +1,15 @@
+id: grpc-reflection-audit
+info:
+  name: "gRPC Server Reflection Audit"
+  severity: "Medium"
+  description: "Audits gRPC services for exposed reflection endpoints and enumerates available services and methods."
+  compliance:
+    cwe: "CWE-200"
+grpc_audit:
+  - target: "{{Hostname}}:50051"
+    reflection: true
+
+  - target: "{{Hostname}}:8080"
+    service: "grpc.health.v1.Health"
+    method: "Check"
+    reflection: false

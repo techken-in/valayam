@@ -1,0 +1,14 @@
+id: cloud-gcp-enum
+info:
+  name: "GCP Resource Enumeration"
+  severity: "Medium"
+  description: "Enumerates GCP storage buckets, compute instances, and service accounts via metadata endpoints."
+  compliance:
+    cwe: "CWE-213"
+cloud:
+  - provider: "gcp"
+    action: "list_resources"
+  - provider: "gcp"
+    action: "enum_buckets"
+  - provider: "gcp"
+    action: "metadata_probe"

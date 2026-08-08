@@ -1,0 +1,7 @@
+id: mitre-attck-mapping
+info:
+  name: "MITRE ATT&CK Framework Mapping"
+  severity: "Info"
+  description: "Maps detected findings to MITRE ATT&CK framework techniques for threat intelligence context."
+mitre_mapping:
+  - enable_mapping: true

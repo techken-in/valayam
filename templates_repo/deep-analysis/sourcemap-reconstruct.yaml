@@ -1,0 +1,8 @@
+id: deep-analysis-sourcemap
+info:
+  name: "Source Map Reconstruction Analysis"
+  severity: "Medium"
+  description: "Reconstructs source maps to recover original JavaScript source code and discover hidden endpoints."
+deep_analysis:
+  - target: "https://{{Hostname}}"
+    analysis_type: "source_map"

@@ -1,0 +1,19 @@
+id: header-security-scorecard
+info:
+  name: "Security Header Scorecard"
+  severity: "Medium"
+  description: "Audits security headers to check if essential security controls are properly configured."
+  compliance:
+    owasp: "A05:2021"
+    cwe: "CWE-693"
+header_scorecard:
+  - target: "https://{{Hostname}}"
+    required_headers:
+      - "Strict-Transport-Security"
+      - "X-Content-Type-Options"
+      - "X-Frame-Options"
+      - "Content-Security-Policy"
+      - "X-XSS-Protection"
+      - "Referrer-Policy"
+      - "Permissions-Policy"
+      - "Cache-Control"

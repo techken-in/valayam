@@ -1,0 +1,49 @@
+id: http-xss-detection
+info:
+  name: "Cross-Site Scripting (XSS) Detection"
+  severity: "High"
+  description: "Detects reflected XSS vulnerabilities by injecting script payloads into query parameters and POST bodies."
+  compliance:
+    owasp: "A03:2021"
+    cwe: "CWE-79"
+requests:
+  - method: GET
+    path: "/"
+    attack: inject
+    inject_in: query
+    payloads:
+      - "<script>alert('xss')</script>"
+      - "\"><img src=x onerror=alert(1)>"
+    headers:
+      User-Agent: "Valayam-Scanner/1.0"
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "<script>alert('xss')</script>"
+          - "\"><img src=x onerror=alert(1)>"
+      - type: status
+        part: status
+        status:
+          - 200
+    matcher_condition: and
+
+  - method: POST
+    path: "/"
+    attack: inject
+    inject_in: body
+    payloads:
+      - "<script>alert(1)</script>"
+    body: "INJECT_HERE"
+    headers:
+      Content-Type: "application/x-www-form-urlencoded"
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "<script>alert\\(1\\)</script>"
+      - type: status
+        part: status
+        status:
+          - 200
+    matcher_condition: and

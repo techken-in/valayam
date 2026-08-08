@@ -1,0 +1,41 @@
+id: oauth-jwt-audit
+info:
+  name: "OAuth 2.0 JWT Token Security Audit"
+  severity: "Critical"
+  description: "Audits OAuth 2.0 implementations for JWT algorithm confusion, none algorithm, and key confusion vulnerabilities."
+  compliance:
+    owasp: "A01:2021"
+    cwe: "CWE-287"
+oauth_audit:
+  - target: "https://{{Hostname}}/oauth"
+    flow_type: "authorization_code"
+    jwt_mutations:
+      - "none_alg"
+      - "key_confusion"
+      - "algorithm_confusion"
+    matchers:
+      - type: status
+        part: status
+        status:
+          - 200
+
+  - target: "https://{{Hostname}}/oauth"
+    flow_type: "implicit"
+    jwt_mutations:
+      - "none_alg"
+      - "key_confusion"
+    matchers:
+      - type: status
+        part: status
+        status:
+          - 200
+
+  - target: "https://{{Hostname}}/oauth"
+    flow_type: "client_credentials"
+    jwt_mutations:
+      - "none_alg"
+    matchers:
+      - type: status
+        part: status
+        status:
+          - 200

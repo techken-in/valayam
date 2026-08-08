@@ -1,0 +1,113 @@
+name: Rust CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # ── Proto lint (fast, gate) ──────────────────────────────────────────
+  proto_lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: bufbuild/buf-setup-action@v1
+    - name: Lint proto files
+      uses: bufbuild/buf-lint-action@v1
+      with:
+        input: crates/valayam-proto/proto
+    - name: Check backward compatibility
+      uses: bufbuild/buf-breaking-action@v1
+      with:
+        input: crates/valayam-proto/proto
+        against: https://github.com/${{ github.repository }}.git#branch=main,ref=HEAD~1,subdir=crates/valayam-proto/proto
+
+  # ── Build + test (stable + beta matrix) ────────────────────────────
+  build_and_test:
+    needs: proto_lint
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain: [stable, beta]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Rust ${{ matrix.toolchain }}
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: ${{ matrix.toolchain }}
+        components: clippy, rustfmt
+        targets: wasm32-unknown-unknown
+
+    - name: Cache Rust build
+      uses: Swatinem/rust-cache@v2
+
+    - name: Format check
+      run: cargo fmt --all -- --check
+
+    - name: Clippy lints (all features)
+      run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+    - name: Build all crates (excluding WASM binary targets)
+      run: cargo build --workspace --exclude valayam-plugin-sdk --exclude csp-audit --exclude recon-audit --exclude reputation-audit --all-features
+
+    - name: Build WASM plugins
+      run: |
+        mkdir -p plugins
+        for manifest in plugins-wasm/*/Cargo.toml; do
+          dir=$(dirname "$manifest")
+          name=$(basename "$dir")
+          # Skip test-runner (integration tests, not WASM)
+          [ "$name" = "test-runner" ] && continue
+          # Skip plugins that fail wasm32 build (rand dep issues)
+          case "$name" in
+            csp-audit|recon-audit|reputation-audit) continue ;;
+          esac
+          echo "Building $name ..."
+          cargo build --manifest-path "$manifest" --target wasm32-unknown-unknown --release
+          wasm_name="${name//-/_}.wasm"
+          cp "target/wasm32-unknown-unknown/release/$wasm_name" plugins/ || true
+        done
+
+    - name: Run tests (exclude PDK-dependent crates, all features)
+      run: cargo test --workspace --all-features --exclude valayam-plugin-sdk --verbose
+
+    - name: Run encryption tests with VALAYAM_PLUGIN_ENC_KEY
+      run: |
+        export VALAYAM_PLUGIN_ENC_KEY=$(openssl rand -base64 32)
+        cargo test --workspace --all-features --exclude valayam-plugin-sdk encrypted_store --verbose
+
+  # ── WASM plugin release build ──────────────────────────────────────
+  wasm_build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: wasm32-unknown-unknown
+    - uses: Swatinem/rust-cache@v2
+    - name: Build all WASM plugins
+      run: |
+        mkdir -p dist/wasm-plugins
+        for manifest in plugins-wasm/*/Cargo.toml; do
+          dir=$(dirname "$manifest")
+          name=$(basename "$dir")
+          [ "$name" = "test-runner" ] && continue
+          echo "Building $name..."
+          cargo build --manifest-path "$manifest" --target wasm32-unknown-unknown --release
+          wasm_name="${name//-/_}.wasm"
+          src="target/wasm32-unknown-unknown/release/$wasm_name"
+          if [ -f "$src" ]; then
+            cp "$src" "dist/wasm-plugins/$wasm_name"
+          fi
+        done
+    - name: Upload WASM artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: wasm-plugins
+        path: dist/wasm-plugins/

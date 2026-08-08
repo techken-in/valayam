@@ -1,0 +1,27 @@
+[package]
+license = "Apache-2.0"
+name = "valayam-models"
+version.workspace = true
+edition.workspace = true
+
+[features]
+
+[dependencies]
+valayam-error = { path = "../valayam-error" }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+chrono = { workspace = true }
+uuid = { version = "1.24.0", features = ["v4", "serde"] }
+serde_yaml = { workspace = true }
+thiserror = { workspace = true }
+reqwest = { workspace = true, default-features = false, features = ["rustls-tls", "json", "blocking"] }
+tokio = { workspace = true, features = ["full"] }
+regex = { workspace = true }
+base64 = { workspace = true }
+md5 = { workspace = true }
+sha2 = { workspace = true }
+url = { workspace = true }
+
+[dev-dependencies]
+anyhow.workspace = true
+tempfile = "3"

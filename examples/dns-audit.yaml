@@ -1,0 +1,16 @@
+id: dns-subdomain-takeover
+info:
+  name: "Subdomain Takeover Check"
+  severity: "High"
+  description: "Detects CNAME records pointing to unclaimed services."
+dns:
+  - domain: "{{Hostname}}"
+    query_type: "CNAME"
+    matchers:
+      - type: "regex"
+        part: "record"
+        regex:
+          - "\\.github\\.io$"
+          - "\\.herokuapp\\.com$"
+          - "\\.azurewebsites\\.net$"
+          - "\\.cloudfront\\.net$"

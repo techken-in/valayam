@@ -1,0 +1,8 @@
+name: ".tmpQkRzYd"
+version: "1.0.0"
+author: "SecurityTeam"
+runtime: "grpc"
+language: "python"
+entrypoint: "run.bat"
+capabilities:
+  - "network_scan"

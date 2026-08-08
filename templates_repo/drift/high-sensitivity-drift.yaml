@@ -1,0 +1,9 @@
+id: drift-high-sensitivity
+info:
+  name: "High Sensitivity Drift Detection"
+  severity: "Low"
+  description: "Monitors endpoints with high sensitivity mode to catch body hash, header structure, and status code changes."
+drift_detect:
+  - target: "https://{{Hostname}}"
+    baseline_id: "bl-{{Hostname}}-high"
+    sensitivity: "high"

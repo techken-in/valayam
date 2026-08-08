@@ -1,0 +1,23 @@
+id: http-passive-headers
+info:
+  name: "Passive Security Header Checks"
+  severity: "Low"
+  description: "Detects missing security headers on all crawled pages without sending extra payloads."
+  compliance:
+    owasp: "A05:2021"
+requests:
+  - method: GET
+    path: "/"
+    attack: passive
+    matchers:
+      - type: word
+        part: header
+        negative: true
+        words:
+          - "X-Frame-Options"
+          - "Content-Security-Policy"
+      - type: status
+        part: status
+        status:
+          - 200
+    matcher_condition: and

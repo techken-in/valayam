@@ -1,0 +1,40 @@
+id: script-waf-detection
+info:
+  name: "WAF Detection Script"
+  severity: "Info"
+  description: "Multi-step Rhai script that detects WAF presence by analyzing response patterns across multiple requests."
+scripts:
+  - engine: "rhai"
+    source:
+      code: |
+        let base = target_url;
+        let waf_sigs = ["CloudFlare", "ModSecurity", "AWS WAF", "F5 BIG-IP",
+                        "AkamaiGHost", "barracuda", "Sucuri", "Imperva"];
+
+        // Send a malicious-looking request
+        let resp = http_get(base + "/?id=1 UNION SELECT NULL--");
+        log("WAF probe status: " + resp.status + " body len: " + resp.body.len);
+
+        // Check for WAF cookies/headers
+        let server = if resp.headers.contains_key("Server") {
+          resp.headers["Server"]
+        } else { "" };
+
+        let cf_ray = if resp.headers.contains_key("CF-RAY") { "true" } else { "false" };
+        log("Server: " + server + " CF-Ray: " + cf_ray);
+
+        // Check response code patterns
+        if resp.status == 406 || resp.status == 501 || resp.status == 999 {
+          log("WAF likely present - got status " + resp.status);
+          return true;
+        }
+
+        // Check for WAF blocking page content
+        for sig in waf_sigs {
+          if regex_match(resp.body, sig) {
+            log("WAF detected: " + sig);
+            return true;
+          }
+        }
+
+        false

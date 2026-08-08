@@ -1,0 +1,11 @@
+id: pii-leak-detection
+info:
+  name: "PII Data Leak Detection"
+  severity: "Critical"
+  description: "Scans API responses for patterns matching PII data exposure (SSN, email, credit card, phone numbers)."
+  compliance:
+    owasp: "A01:2021"
+    cwe: "CWE-359"
+    gdpr: "true"
+pii_leak_audit:
+  - target: "https://{{Hostname}}"

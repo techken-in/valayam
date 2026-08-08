@@ -1,0 +1,17 @@
+id: auto-idor-check
+info:
+  name: "User Profile IDOR Detection"
+  severity: "High"
+  description: "Detects Insecure Direct Object References by swapping tokens between an admin and standard user."
+auth:
+  primary: "Bearer {{admin_token}}"
+  secondary: "Bearer {{user_token}}"
+logic:
+  - type: "idor"
+    path: "/api/users/{{admin_id}}/profile"
+    method: "GET"
+    matchers:
+      - type: status
+        status: [200]
+      - type: regex
+        regex: ["admin_secret_data", "social_security_number"]

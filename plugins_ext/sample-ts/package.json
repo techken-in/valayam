@@ -1,0 +1,7 @@
+{
+  "name": "sample-ts",
+  "version": "1.0.0",
+  "dependencies": {
+    "@extism/js-pdk": "^1.0.0"
+  }
+}

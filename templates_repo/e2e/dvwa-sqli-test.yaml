@@ -1,0 +1,16 @@
+id: dvwa-sqli-reflection
+info:
+  name: DVWA Blind SQL Injection Reflection Check
+  severity: Critical
+  description: Detects basic reflection or SQLi on the vulnerable parameter
+requests:
+  - method: GET
+    path: /vulnerabilities/sqli/?id=1'%20OR%20'1'='1&Submit=Submit
+    headers:
+      Cookie: "security=low; PHPSESSID=dummy"
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "You have an error in your SQL syntax"
+          - "First name: admin"

@@ -1,0 +1,8 @@
+id: cors_audit_demo
+info:
+  name: "CORS Audit Test"
+  severity: "Medium"
+  description: "E2E Test for CORS plugin"
+requests:
+  - method: GET
+    path: "{{BaseURL}}"

@@ -1,0 +1,20 @@
+id: port-scan-internal-services
+info:
+  name: "Internal Network Service Port Scan"
+  severity: "Medium"
+  description: "Scans for internal services (LDAP, RPC, print, file sharing) exposed to the network."
+  classification:
+    cve-2023-0004: {}
+port_scan:
+  - ports:
+      - 135
+      - 139
+      - 445
+      - 389
+      - 636
+      - 2049
+      - 111
+      - 548
+      - 3283
+      - 5900
+      - 5901

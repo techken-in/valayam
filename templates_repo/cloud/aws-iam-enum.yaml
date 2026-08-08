@@ -1,0 +1,15 @@
+id: cloud-aws-im-enum
+info:
+  name: "AWS IAM and Resource Enumeration"
+  severity: "Medium"
+  description: "Enumerates AWS IAM roles, users, and resources via metadata service endpoints."
+  compliance:
+    cwe: "CWE-213"
+    mitre-attack: "T1087"
+cloud:
+  - provider: "aws"
+    action: "iam_enum"
+  - provider: "aws"
+    action: "list_resources"
+  - provider: "aws"
+    action: "metadata_probe"

@@ -1,0 +1,11 @@
+id: header-csp-audit
+info:
+  name: "Content Security Policy Header Audit"
+  severity: "Medium"
+  description: "Specifically checks for CSP headers with secure directives and flags weak or missing CSP configurations."
+header_scorecard:
+  - target: "https://{{Hostname}}"
+    required_headers:
+      - "Content-Security-Policy"
+      - "X-Content-Security-Policy"
+      - "X-WebKit-CSP"

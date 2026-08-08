@@ -1,0 +1,13 @@
+id: ct-log-cert-discovery
+info:
+  name: "Certificate Transparency Log Discovery"
+  severity: "Info"
+  description: "Queries Certificate Transparency logs (crt.sh) for all SSL/TLS certificates issued to the target domain to discover subdomains."
+  compliance:
+    cwe: "CWE-200"
+ct_log_audit:
+  - target: "crtsh"
+    query_domain: "{{Hostname}}"
+
+  - target: "crt.sh"
+    query_domain: "{{Hostname}}"

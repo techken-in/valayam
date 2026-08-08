@@ -1,0 +1,19 @@
+[package]
+license = "Apache-2.0"
+name = "valayam-reporter"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+valayam-models = { workspace = true }
+valayam-engine = { workspace = true }
+serde_json.workspace = true
+serde.workspace = true
+chrono.workspace = true
+colored = "3.1"
+uuid = { version = "1.24.0", features = ["v4"] }
+async-trait.workspace = true
+tokio = { workspace = true, features = ["full"] }
+tracing = "0.1"
+anyhow.workspace = true
+thiserror.workspace = true

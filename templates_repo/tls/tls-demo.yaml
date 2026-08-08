@@ -1,0 +1,16 @@
+id: tls-expiry-check
+info:
+  name: "TLS Certificate Expiry and Weak Cipher Check"
+  severity: "Medium"
+  description: "Audits the TLS certificate of a target to check if it's expired or using deprecated cipher suites."
+tls:
+  - host: "{{Hostname}}"
+    port: 443
+    matchers:
+      - type: "expired"
+        part: "body"
+      - type: "weak_cipher"
+        part: "body"
+      - type: "legacy_tls"
+        part: "body"
+

@@ -1,0 +1,11 @@
+id: k8s-rbac-audit
+info:
+  name: "Kubernetes RBAC Security Audit"
+  severity: "Critical"
+  description: "Audits Kubernetes manifests for strict RBAC compliance and over-privileged service accounts."
+  compliance:
+    cwe: "CWE-1220"
+    mitre-attack: "T1087"
+k8s_audit:
+  - target_manifest: "deployment.yaml"
+    strict_rbac: true

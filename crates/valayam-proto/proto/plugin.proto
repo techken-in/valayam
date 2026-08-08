@@ -1,0 +1,61 @@
+syntax = "proto3";
+package valayam.plugin;
+
+option go_package = "valayam-plugin-go/plugin";
+
+// The PluginService is implemented by external binaries (gRPC plugins).
+// The Valayam engine acts as the gRPC client, calling these methods.
+service PluginService {
+    // Initialize the plugin
+    rpc Init (InitRequest) returns (InitResponse);
+    
+    // Validate the plugin's configuration based on the provided template
+    rpc ValidateConfig (ValidateConfigRequest) returns (ValidateConfigResponse);
+    
+    // Execute the plugin logic. 
+    // Streams FindingOwned serialized as JSON strings back to the core engine.
+    rpc Execute (ExecuteRequest) returns (stream ExecuteResponse);
+    
+    // Shutdown the plugin gracefully
+    rpc Shutdown (ShutdownRequest) returns (ShutdownResponse);
+}
+
+message InitRequest {
+    string engine_version = 1;
+}
+message InitResponse {
+    bool success = 1;
+    string error_message = 2;
+    repeated string supported_protocols = 3;
+    repeated string supported_template_ids = 4;
+    repeated string supported_tags = 5;
+}
+
+message ValidateConfigRequest {
+    // The VulnerabilityTemplate serialized as a JSON string
+    string template_json = 1;
+}
+message ValidateConfigResponse {
+    bool valid = 1;
+    string error_message = 2;
+}
+
+message ExecuteRequest {
+    // The VulnerabilityTemplate serialized as a JSON string
+    string template_json = 1;
+    // The target URL or Host
+    string target = 2;
+    // The target Host
+    string target_host = 3;
+    // The ScanContext serialized as JSON string
+    string context_json = 4;
+}
+message ExecuteResponse {
+    // FindingOwned serialized as a JSON string
+    string finding_json = 1;
+}
+
+message ShutdownRequest {}
+message ShutdownResponse {
+    bool success = 1;
+}

@@ -1,0 +1,39 @@
+id: auth-chain-extractor
+info:
+  name: "Authenticated API Check"
+  severity: "High"
+  description: "Logs in, extracts a bearer token, and queries a protected endpoint."
+requests:
+  # Step 1: Login and extract the token
+  - method: "POST"
+    path: "/post"
+    body: "username=admin&password=admin"
+    headers:
+      Content-Type: "application/x-www-form-urlencoded"
+    matchers:
+      - type: "status"
+        part: "status"
+        status:
+          - 200
+    extractors:
+      - type: "regex"
+        name: "auth_token"
+        part: "body"
+        # We match httpbin.org's json response containing "form": {"username":"admin"}
+        regex: '"username":\s*"([^"]+)"'
+        group: 1
+
+  # Step 2: Use the extracted token in a protected request
+  - method: "GET"
+    path: "/get?token={{auth_token}}"
+    headers:
+      Authorization: "Bearer {{auth_token}}"
+    matchers:
+      - type: "status"
+        part: "status"
+        status:
+          - 200
+      - type: "regex"
+        part: "body"
+        regex:
+          - '"token":\s*"admin"'

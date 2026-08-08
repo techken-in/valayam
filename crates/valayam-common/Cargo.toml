@@ -1,0 +1,23 @@
+[package]
+license = "Apache-2.0"
+name = "valayam-common"
+version.workspace = true
+edition.workspace = true
+
+[features]
+s3 = ["aws-sdk-s3", "aws-config"]
+
+[dependencies]
+rand.workspace = true
+regex.workspace = true
+url.workspace = true
+serde = { workspace = true, features = ["derive"] }
+thiserror = { workspace = true }
+tracing = "0.1"
+async-trait = { workspace = true }
+tokio = { workspace = true, features = ["fs"] }
+aws-config = { version = "1.1", optional = true }
+aws-sdk-s3 = { version = "1.21", optional = true }
+# Encryption at rest for plugin blobs (AES-256-GCM)
+aes-gcm = "0.10"
+base64 = "0.22"

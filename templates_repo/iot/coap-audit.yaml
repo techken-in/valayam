@@ -1,0 +1,10 @@
+id: iot-coap-audit
+info:
+  name: "IoT CoAP Endpoint Security Audit"
+  severity: "Medium"
+  description: "Audits CoAP endpoints for open resources and default configurations."
+iot_audit:
+  - target: "coap://{{Hostname}}:5683"
+    protocol: "coap"
+  - target: "coaps://{{Hostname}}:5684"
+    protocol: "coap"

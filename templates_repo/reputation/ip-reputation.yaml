@@ -1,0 +1,20 @@
+id: reputation-ip-check
+info:
+  name: "IP Reputation Audit"
+  severity: "High"
+  description: "Cross-references target IP/domain against known threat intelligence blocklists and reputation databases."
+  compliance:
+    cwe: "CWE-213"
+reputation_audit:
+  - target: "{{Hostname}}"
+    blocklists:
+      - "alienvault"
+      - "abuseipdb"
+      - "virustotal"
+      - "spamhaus"
+
+  - target: "{{Hostname}}"
+    blocklists:
+      - "spamcop"
+      - "blocklist.de"
+      - "cymru"

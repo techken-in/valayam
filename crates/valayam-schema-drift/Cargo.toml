@@ -1,0 +1,19 @@
+[package]
+license = "Apache-2.0"
+name = "valayam-schema-drift"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+valayam-models = { workspace = true }
+valayam-error = { path = "../valayam-error" }
+valayam-network = { workspace = true }
+valayam-crawler = { path = "../valayam-crawler" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+chrono.workspace = true
+md5.workspace = true
+tracing = "0.1"
+tokio.workspace = true
+anyhow.workspace = true

@@ -1,0 +1,9 @@
+id: ui-proxy-config
+info:
+  name: "Interactive UI Proxy Configuration"
+  severity: "Info"
+  description: "Enables the interactive proxy for manual traffic inspection and request modification."
+ui_proxy:
+  - enabled: true
+    port: 8080
+    allow_modification: true

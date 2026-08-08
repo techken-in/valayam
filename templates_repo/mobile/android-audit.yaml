@@ -1,0 +1,15 @@
+id: mobile-android-audit
+info:
+  name: "Mobile Android (APK) Security Audit"
+  severity: "High"
+  description: "Audits Android APK manifests for insecure components, exported activities, and embedded secrets."
+  compliance:
+    cwe: "CWE-927"
+    owasp-mobile: "M1"
+mobile_audit:
+  - target: "{{Hostname}}"
+    action: "manifest_scan"
+    app_type: "apk"
+  - target: "{{Hostname}}"
+    action: "secret_scan"
+    app_type: "apk"

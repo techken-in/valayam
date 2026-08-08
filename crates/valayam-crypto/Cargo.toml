@@ -1,0 +1,10 @@
+[package]
+license = "Apache-2.0"
+name = "valayam-crypto"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+ed25519-dalek = { version = "2.1", features = ["rand_core"] }
+rand_core = { version = "0.6", features = ["getrandom"] }
+anyhow.workspace = true

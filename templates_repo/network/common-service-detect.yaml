@@ -1,0 +1,69 @@
+id: network-common-service-detect
+info:
+  name: "Common Service Detection via Banner Grabbing"
+  severity: "Info"
+  description: "Scans for and identifies common network services (SSH, FTP, SMTP, MySQL) via TCP banner grabbing."
+network:
+  - host: "{{Hostname}}"
+    ports:
+      - "21"
+    protocol: "tcp"
+    banner_timeout_ms: 3000
+    send_probe: "HELP\r\n"
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "220.*FTP"
+          - "vsFTPd"
+          - "ProFTPD"
+          - "Pure-FTPd"
+          - "FileZilla"
+
+  - host: "{{Hostname}}"
+    ports:
+      - "25"
+      - "587"
+      - "2525"
+    protocol: "tcp"
+    banner_timeout_ms: 5000
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "220.*SMTP"
+          - "220.*ESMTP"
+          - "Postfix"
+          - "Sendmail"
+          - "Exim"
+
+  - host: "{{Hostname}}"
+    ports:
+      - "110"
+      - "995"
+    protocol: "tcp"
+    banner_timeout_ms: 3000
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "\\+OK.*POP3"
+          - "Dovecot.*ready"
+      - type: word
+        part: body
+        words:
+          - "+OK"
+    matcher_condition: or
+
+  - host: "{{Hostname}}"
+    ports:
+      - "3306"
+    protocol: "tcp"
+    banner_timeout_ms: 3000
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "mysql_native_password"
+          - "MariaDB"
+          - "5\\.[0-9]\\.[0-9].*-log"

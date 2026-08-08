@@ -1,0 +1,18 @@
+id: network-banner-grab
+info:
+  name: "SSH and FTP Banner Detection"
+  severity: "Info"
+network:
+  - host: "{{Hostname}}"
+    ports:
+      - "21-22"
+      - "80"
+      - "443"
+    banner_timeout_ms: 3000
+    matchers:
+      - type: "regex"
+        part: "banner"
+        regex:
+          - "SSH-2\\.0-OpenSSH"
+          - "220.*FTP"
+          - "HTTP"

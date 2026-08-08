@@ -1,0 +1,48 @@
+[package]
+license = "Apache-2.0"
+name = "valayam-engine"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+tokio = { workspace = true, features = ["full"] }
+async-trait = { workspace = true }
+governor = { workspace = true }
+lazy_static = { workspace = true }
+tracing = "0.1"
+valayam-models = { path = "../valayam-models" }
+valayam-network = { path = "../valayam-network" }
+valayam-proto = { workspace = true }
+tokio-util = { version = "0.7.11" }
+tokio-stream = { version = "0.1", features = ["net"] }
+reqwest = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tonic = { workspace = true }
+prost = { workspace = true }
+extism = "1.0"
+wasmtime = { version = "18.0.4" }
+wasmtime-wasi = { version = "18.0.4" }
+rand = "0.8"
+dirs = "5.0"
+anyhow = "1.0"
+notify = "6.1"
+url = { workspace = true }
+zip = "0.6"
+flate2 = "1.0"
+tar = "0.4"
+valayam-crypto = { path = "../valayam-crypto" }
+regex = { workspace = true }
+futures = { workspace = true }
+tracing-opentelemetry = "0.22"
+opentelemetry = "0.21"
+uuid = { version = "1.24.0", features = ["v4", "serde"] }
+serde_yaml = { workspace = true }
+hickory-resolver.workspace = true
+prometheus = { workspace = true }
+parking_lot = { workspace = true }
+valayam-common = { version = "0.1.0", path = "../valayam-common" }
+hex = { workspace = true }
+sha2 = { workspace = true }
+
+[build-dependencies]

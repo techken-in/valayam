@@ -1,0 +1,16 @@
+[package]
+license = "Apache-2.0"
+name = "valayam-config"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+serde = { workspace = true, features = ["derive"] }
+serde_yaml = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+url = { workspace = true }
+tracing = "0.1"
+dotenvy = "0.15"
+uuid = { version = "1.24.0", features = ["v4"] }
+colored = "3.1.1"

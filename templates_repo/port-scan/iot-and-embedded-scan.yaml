@@ -1,0 +1,22 @@
+id: port-scan-iot-embedded
+info:
+  name: "IoT and Embedded Device Port Scan"
+  severity: "Medium"
+  description: "Scans for ports commonly used by IoT devices and embedded systems."
+  classification:
+    cve-2023-0005: {}
+port_scan:
+  - ports:
+      - 80
+      - 443
+      - 8080
+      - 8443
+      - 554
+      - 8554
+      - 37777
+      - 37778
+      - 49152
+      - 32400
+      - 1900
+      - 5683
+      - 5684

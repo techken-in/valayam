@@ -1,0 +1,13 @@
+id: container-image-vuln
+info:
+  name: "Container Image Vulnerability Scan"
+  severity: "High"
+  description: "Scans container images for known vulnerabilities using multiple CVE databases."
+  compliance:
+    cwe: "CWE-1104"
+container_audit:
+  - target_image: "{{ImageName}}"
+    checks:
+      - "trivy"
+      - "grype"
+      - "docker-bench"

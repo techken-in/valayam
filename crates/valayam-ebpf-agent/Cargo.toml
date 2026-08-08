@@ -1,0 +1,22 @@
+[package]
+license = "Apache-2.0"
+name = "valayam-ebpf-agent"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+tokio = { workspace = true, features = ["full", "signal"] }
+valayam-engine = { path = "../valayam-engine" }
+valayam-proto = { workspace = true }
+tonic = "0.10"
+prost = "0.12"
+bytes = "1.5"
+tokio-stream = "0.1"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+aya = { version = "0.12", features = ["async_tokio"] }
+aya-log = "0.2"
+
+[build-dependencies]

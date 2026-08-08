@@ -1,0 +1,9 @@
+id: cicd-pipeline-audit
+info:
+  name: "CI/CD Pipeline Security Audit"
+  severity: "High"
+  description: "Audits CI/CD configuration files for security misconfigurations, exposed secrets, and vulnerable pipeline steps."
+  compliance:
+    cwe: "CWE-522"
+cicd_audit:
+  - target_repo: "{{Hostname}}"

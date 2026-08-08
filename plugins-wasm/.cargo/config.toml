@@ -1,0 +1,10 @@
+[build]
+target = "wasm32-wasip1"
+
+# Redirect the target directory out of the source tree
+# This prevents target/ folders from being created inside plugins-wasm
+[env]
+CARGO_TARGET_DIR = { value = "valayam-wasm-target", force = false }
+
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "link-arg=/INCREMENTAL:NO"]

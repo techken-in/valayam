@@ -1,0 +1,292 @@
+{
+  "title": "Valayam Scanner",
+  "description": "Real-time monitoring dashboard for Valayam security scanner engine — plugin execution, HTTP client, and rate-limiter metrics.",
+  "schemaVersion": 39,
+  "version": 1,
+  "tags": ["valayam", "security", "scanner"],
+  "time": { "from": "now-15m", "to": "now" },
+  "timepicker": {
+    "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m"]
+  },
+  "refresh": "10s",
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Active Plugins",
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+      "targets": [{
+        "expr": "count(valayam_plugin_outcome_total) by (plugin)",
+        "legendFormat": "plugins",
+        "instant": true
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed" },
+          "mappings": [{ "type": 1, "value": "0", "text": "0" }],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "none"
+        }
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Rate Limiter Capacity",
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+      "targets": [{
+        "expr": "valayam_rate_limiter_permits_available",
+        "legendFormat": "permits"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "green", "value": 10 }
+            ]
+          },
+          "unit": "short"
+        }
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Total Findings",
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+      "targets": [{
+        "expr": "sum(increase(valayam_plugin_finding_total[5m]))",
+        "legendFormat": "findings"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 50 },
+              { "color": "red", "value": 200 }
+            ]
+          },
+          "unit": "short"
+        }
+      }
+    },
+    {
+      "type": "stat",
+      "title": "HTTP Request Rate",
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 0 },
+      "targets": [{
+        "expr": "sum(rate(valayam_http_requests_total[1m]))",
+        "legendFormat": "req/s"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 50 },
+              { "color": "red", "value": 200 }
+            ]
+          },
+          "unit": "reqps"
+        }
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Error Rate (5xx)",
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 0 },
+      "targets": [{
+        "expr": "sum(rate(valayam_http_requests_total{status=~\"5..\"}[1m])) / sum(rate(valayam_http_requests_total[1m])) * 100",
+        "legendFormat": "error %"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 5 },
+              { "color": "red", "value": 20 }
+            ]
+          },
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        }
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Plugin Failure Rate",
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 0 },
+      "targets": [{
+        "expr": "sum(rate(valayam_plugin_outcome_total{outcome=\"failed\"}[5m])) / sum(rate(valayam_plugin_outcome_total[5m])) * 100",
+        "legendFormat": "fail %"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 5 },
+              { "color": "red", "value": 15 }
+            ]
+          },
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Plugin Executions by Outcome",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "targets": [
+        { "expr": "sum(rate(valayam_plugin_outcome_total{outcome=\"matched\"}[5m])) by (plugin)", "legendFormat": "{{plugin}} ✓" },
+        { "expr": "sum(rate(valayam_plugin_outcome_total{outcome=\"failed\"}[5m])) by (plugin)", "legendFormat": "{{plugin}} ✗" },
+        { "expr": "sum(rate(valayam_plugin_outcome_total{outcome=\"skipped\"}[5m])) by (plugin)", "legendFormat": "{{plugin}} ⊘" },
+        { "expr": "sum(rate(valayam_plugin_outcome_total{outcome=\"no_match\"}[5m])) by (plugin)", "legendFormat": "{{plugin}} ∅" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": {
+            "stacking": { "mode": "none" },
+            "fillOpacity": 20,
+            "pointSize": 3,
+            "showPoints": "never"
+          }
+        }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Plugin Duration (P50/P95)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "targets": [
+        { "expr": "histogram_quantile(0.5, sum(rate(valayam_plugin_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p50" },
+        { "expr": "histogram_quantile(0.95, sum(rate(valayam_plugin_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p95" },
+        { "expr": "histogram_quantile(0.99, sum(rate(valayam_plugin_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p99" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "fillOpacity": 10 }
+        }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "HTTP Request Latency (P50/P95/P99)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "targets": [
+        { "expr": "histogram_quantile(0.5, sum(rate(valayam_http_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p50" },
+        { "expr": "histogram_quantile(0.95, sum(rate(valayam_http_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p95" },
+        { "expr": "histogram_quantile(0.99, sum(rate(valayam_http_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p99" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "fillOpacity": 10 }
+        }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "HTTP Requests by Status",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "targets": [
+        { "expr": "sum(rate(valayam_http_requests_total{status=\"2xx\"}[5m]))", "legendFormat": "2xx" },
+        { "expr": "sum(rate(valayam_http_requests_total{status=\"3xx\"}[5m]))", "legendFormat": "3xx" },
+        { "expr": "sum(rate(valayam_http_requests_total{status=\"4xx\"}[5m]))", "legendFormat": "4xx" },
+        { "expr": "sum(rate(valayam_http_requests_total{status=\"5xx\"}[5m]))", "legendFormat": "5xx" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "stacking": { "mode": "none" },
+            "fillOpacity": 20
+          }
+        }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Findings per Plugin",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "targets": [{
+        "expr": "sum(increase(valayam_plugin_finding_total[5m])) by (plugin)",
+        "legendFormat": "{{plugin}}"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "stacking": { "mode": "normal" },
+            "fillOpacity": 30
+          }
+        }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Rate Limiter Permits",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "targets": [{
+        "expr": "valayam_rate_limiter_permits_available",
+        "legendFormat": "permits"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "fillOpacity": 30 }
+        }
+      }
+    }
+  ],
+  "rows": [],
+  "graphTooltip": 1,
+  "links": [],
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": { "text": "Prometheus", "value": "prometheus" },
+        "hide": 0
+      },
+      {
+        "name": "plugin",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "${datasource}" },
+        "query": "label_values(valayam_plugin_outcome_total, plugin)",
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "hide": 0
+      }
+    ]
+  },
+  "annotations": {
+    "list": [
+      {
+        "name": "Scan Events",
+        "type": "dashboard",
+        "builtIn": 1,
+        "datasource": { "type": "datasource", "uid": "-- Grafana --" }
+      }
+    ]
+  }
+}

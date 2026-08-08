@@ -1,0 +1,12 @@
+id: graphql-mutation-audit
+info:
+  name: "GraphQL Mutation and Authorization Audit"
+  severity: "Critical"
+  description: "Tests GraphQL mutations for authorization bypasses by sending unauthorized mutation requests."
+  compliance:
+    owasp: "A01:2021"
+    cwe: "CWE-285"
+graphql_audit:
+  - target: "https://{{Hostname}}/graphql"
+    introspection: false
+    mutate: true

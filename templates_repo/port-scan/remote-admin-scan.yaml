@@ -1,0 +1,14 @@
+id: remote-admin-scan
+info:
+  name: "Remote Administration Service Scan"
+  description: "Checks for exposed remote administration services like SSH, RDP, VNC"
+  severity: "High"
+  classification:
+    cve-2023-0003: {}
+port_scan:
+  - ports:
+      - 22    # SSH
+      - 23    # Telnet
+      - 21    # FTP
+      - 3389  # RDP
+      - 5900  # VNC

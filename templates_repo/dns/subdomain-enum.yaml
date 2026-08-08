@@ -1,0 +1,122 @@
+id: dns-subdomain-enum
+info:
+  name: "DNS Subdomain Enumeration"
+  severity: "Info"
+  description: "Enumerates common subdomains via DNS A/AAAA records to discover hidden or unmanaged assets."
+dns:
+  - domain: "www.{{Hostname}}"
+    query_type: "A"
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "IN"
+      - type: status
+        part: status
+        status:
+          - 200
+    matcher_condition: and
+
+  - domain: "mail.{{Hostname}}"
+    query_type: "A"
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "IN"
+      - type: status
+        part: status
+        status:
+          - 200
+    matcher_condition: and
+
+  - domain: "api.{{Hostname}}"
+    query_type: "A"
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "IN"
+      - type: status
+        part: status
+        status:
+          - 200
+    matcher_condition: and
+
+  - domain: "admin.{{Hostname}}"
+    query_type: "A"
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "IN"
+      - type: status
+        part: status
+        status:
+          - 200
+    matcher_condition: and
+
+  - domain: "dev.{{Hostname}}"
+    query_type: "A"
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "IN"
+      - type: status
+        part: status
+        status:
+          - 200
+    matcher_condition: and
+
+  - domain: "blog.{{Hostname}}"
+    query_type: "A"
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "IN"
+      - type: status
+        part: status
+        status:
+          - 200
+    matcher_condition: and
+
+  - domain: "cdn.{{Hostname}}"
+    query_type: "A"
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "IN"
+      - type: status
+        part: status
+        status:
+          - 200
+    matcher_condition: and
+
+  - domain: "portal.{{Hostname}}"
+    query_type: "A"
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "IN"
+      - type: status
+        part: status
+        status:
+          - 200
+    matcher_condition: and
+
+  - domain: "remote.{{Hostname}}"
+    query_type: "A"
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "IN"
+      - type: status
+        part: status
+        status:
+          - 200
+    matcher_condition: and

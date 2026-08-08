@@ -1,0 +1,12 @@
+id: mobile-ios-audit
+info:
+  name: "Mobile iOS (IPA) Security Audit"
+  severity: "High"
+  description: "Audits iOS IPA binaries for insecure plist configurations, hardcoded secrets, and insecure data storage."
+  compliance:
+    cwe: "CWE-927"
+    owasp-mobile: "M2"
+mobile_audit:
+  - target: "{{Hostname}}"
+    action: "secret_scan"
+    app_type: "ipa"

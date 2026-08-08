@@ -1,0 +1,106 @@
+[workspace]
+members = [
+    "crates/valayam-core",
+    "crates/valayam-cli",
+    "crates/valayam-plugin-grpc-example",
+    "crates/valayam-plugin-wasm-example",
+    "crates/valayam-engine",
+    "crates/valayam-models",
+    "crates/valayam-error",
+    "crates/valayam-telemetry",
+    "crates/valayam-crypto",
+    "crates/valayam-state",
+    "crates/valayam-reporter",
+    "crates/valayam-crawler",
+    "crates/valayam-threatintel",
+    "crates/valayam-proxy",
+    "crates/valayam-schema-drift",
+    "crates/valayam-oob",
+    "crates/valayam-payloads",
+    "crates/valayam-common",
+    "crates/valayam-core-net",
+    "crates/valayam-network",
+    "crates/valayam-proto",
+    "crates/valayam-ebpf-agent",
+    "crates/valayam-plugin-sdk",
+    "plugins-wasm/cors-audit",
+    "crates/valayam-api",
+    "crates/valayam-config",
+    "crates/valayam-agent", "crates/valayam-tests",
+]
+exclude = [
+    "crates/valayam-ebpf-programs",
+    "plugins-wasm/*",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+
+[workspace.dependencies]
+valayam-models = { path = "crates/valayam-models" }
+valayam-network = { path = "crates/valayam-network", version = "0.1.0" }
+valayam-engine = { path = "crates/valayam-engine", version = "0.1.0" }
+valayam-proto = { path = "crates/valayam-proto", version = "0.1.0" }
+valayam-proxy = { path = "crates/valayam-proxy", version = "0.1.0" }
+valayam-schema-drift = { path = "crates/valayam-schema-drift", version = "0.1.0" }
+valayam-oob = { path = "crates/valayam-oob", version = "0.1.0" }
+valayam-payloads = { path = "crates/valayam-payloads", version = "0.1.0" }
+valayam-common = { path = "crates/valayam-common", version = "0.1.0" }
+valayam-config = { path = "crates/valayam-config", version = "0.1.0" }
+lazy_static = "1.4"
+tokio = { version = "1.38", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_yaml = "0.9"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json", "blocking"] }
+rhai = { version = "1.25", features = ["sync", "serde"] }
+regex = "1.10"
+clap = { version = "4.5", features = ["derive", "env"] }
+walkdir = "2.5"
+anyhow = "1.0"
+thiserror = "1.0"
+serde_json = "1.0"
+base64 = "0.22"
+md5 = "0.7"
+sha2 = "0.10"
+chrono = { version = "0.4", features = ["serde"] }
+futures = "0.3"
+governor = "0.6"
+url = { version = "2.5", features = ["serde"] }
+indicatif = "0.17"
+http = "1.1"
+hickory-resolver = "0.24"
+x509-parser = "0.16"
+rustls-pemfile = "2.0"
+rustls = { version = "0.23", features = ["ring"] }
+tokio-rustls = "0.26"
+rand = "0.8"
+hmac = "0.12"
+tempfile = "3.10"
+tonic = { version = "0.11", features = ["tls", "tls-roots"] }
+prost = "0.12"
+tonic-build = "0.11"
+scraper = "0.19"
+async-trait = "0.1"
+wasmparser = "0.201"
+sourcemap = "8.0"
+zip = "0.6"
+hcl-rs = "0.16.2"
+graphql-parser = "0.4.0"
+jsonwebtoken = "9.3"
+rumqttc = "0.24"
+toml = "0.8"
+hex = "0.4"
+prometheus = { version = "0.13" }
+parking_lot = "0.12"
+
+[profile.release]
+incremental = false
+strip = true      # Automatically strip debug symbols from the binary
+opt-level = "z"   # Optimize for size rather than speed
+lto = true        # Link Time Optimization (removes dead code across dependencies)
+codegen-units = 1 # Better optimizations at the cost of slower compile times
+
+[profile.test]
+incremental = false

@@ -1,0 +1,12 @@
+id: drift-api-detection
+info:
+  name: "API Drift Detection"
+  severity: "Medium"
+  description: "Detects API response drift from a stored baseline, monitoring for shadow endpoints or schema changes."
+  compliance:
+    cwe: "CWE-200"
+drift_detect:
+  - target: "https://{{Hostname}}"
+    storage_backend: "local"
+    baseline_id: "bl-{{Hostname}}"
+    sensitivity: "medium"

@@ -1,0 +1,7 @@
+scrape_configs:
+  - job_name: valayam-engine
+    scrape_interval: 5s
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - "worker:9090"  # valayam engine metrics endpoint

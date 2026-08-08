@@ -1,0 +1,62 @@
+# ── Git & CI ──────────────────────────────────────────────────
+.git/
+.gitignore
+.github/
+.gitlab-ci.yml
+
+# ── Rust Build Artifacts ──────────────────────────────────────
+target/
+**/target/
+**/*.rs.bk
+*.pdb
+*.profraw
+*.profdata
+
+# ── Documentation ─────────────────────────────────────────────
+docs/
+*.md
+LICENSE
+
+# ── IDEs & OS ─────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*.bak
+*~
+.DS_Store
+Thumbs.db
+
+# ── Environments & Secrets ────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.sig
+
+# ── Local Runtime & Scan State ────────────────────────────────
+.valayam_state/
+.valayam-state/
+*.log
+scan_results/
+reports/
+data/
+*.sqlite
+*.db
+
+# ── Agent Artifacts ───────────────────────────────────────────
+.agents/
+.claude/
+.gemini/
+graphify-out/
+
+# ── Python & Node ─────────────────────────────────────────────
+venv/
+.venv/
+__pycache__/
+*.pyc
+node_modules/
+.next/
+dist/
+build/

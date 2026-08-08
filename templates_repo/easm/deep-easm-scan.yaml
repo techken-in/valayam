@@ -1,0 +1,14 @@
+id: easm-deep-scan
+info:
+  name: "Deep External Attack Surface Scan"
+  severity: "Info"
+  description: "Performs comprehensive external attack surface discovery using all available OSINT sources with maximum results."
+easm:
+  - sources:
+      - "crtsh"
+      - "alienvault"
+      - "shodan"
+      - "securitytrails"
+      - "wayback"
+    domain: "{{Hostname}}"
+    max_results: 1000

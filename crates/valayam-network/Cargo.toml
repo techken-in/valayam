@@ -1,0 +1,26 @@
+[package]
+license = "Apache-2.0"
+name = "valayam-network"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+valayam-models = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+reqwest = { workspace = true }
+hickory-resolver = { workspace = true }
+rustls = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+url = { workspace = true }
+anyhow = { workspace = true }
+governor = { workspace = true }
+rand = { workspace = true }
+http = { workspace = true }
+futures = { workspace = true }
+tracing = "0.1"
+regex = { workspace = true }
+tokio-rustls = { workspace = true }
+x509-parser = { workspace = true }
+prometheus = { workspace = true }
+lazy_static = "1"
+valayam-common = { version = "0.1.0", path = "../valayam-common" }

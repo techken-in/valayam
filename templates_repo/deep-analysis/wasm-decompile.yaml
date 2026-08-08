@@ -1,0 +1,10 @@
+id: deep-analysis-wasm-decompile
+info:
+  name: "WebAssembly Decompilation Analysis"
+  severity: "Medium"
+  description: "Decompiles WASM binaries found on the target to uncover hidden endpoints, secrets, and business logic."
+  compliance:
+    cwe: "CWE-200"
+deep_analysis:
+  - target: "https://{{Hostname}}"
+    analysis_type: "wasm_decompile"

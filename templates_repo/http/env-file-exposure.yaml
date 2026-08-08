@@ -1,0 +1,32 @@
+id: env-file-exposure
+info:
+  name: Exposed .env file
+  author: valayam
+  severity: high
+  description: Detects exposure of .env files which may contain sensitive credentials, keys, and tokens.
+  metadata:
+    cwe-id: CWE-200
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    tags: exposure, config, env
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.env"
+      - "{{BaseURL}}/.env.backup"
+      - "{{BaseURL}}/.env.dev"
+      - "{{BaseURL}}/.env.prod"
+      - "{{BaseURL}}/.env.local"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "DB_PASSWORD"
+          - "AWS_ACCESS_KEY_ID"
+          - "SECRET_KEY"
+          - "DATABASE_URL"
+        condition: or

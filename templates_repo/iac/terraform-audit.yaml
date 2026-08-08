@@ -1,0 +1,17 @@
+id: iac-terraform-audit
+info:
+  name: "Terraform Infrastructure as Code Security Audit"
+  severity: "High"
+  description: "Audits Terraform configurations for security misconfigurations and compliance violations."
+  compliance:
+    cwe: "CWE-1104"
+iac_audit:
+  - target: "{{Hostname}}"
+    type: "terraform"
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "misconfiguration"
+          - "violation"
+          - "non_compliant"

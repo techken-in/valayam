@@ -1,0 +1,8 @@
+id: compliance-remediation-report
+info:
+  name: "Automated Remediation Report Generation"
+  severity: "Info"
+  description: "Generates a remediation report with actionable fix recommendations in markdown format."
+remediation_gen:
+  - output_format: "markdown"
+  - output_format: "json"

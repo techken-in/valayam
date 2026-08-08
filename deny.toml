@@ -1,0 +1,31 @@
+# cargo-deny configuration for Valayam.
+# See https://github.com/EmbarkStudios/cargo-deny for reference.
+# Minimal config for cargo-deny 0.20+
+
+[licenses]
+# Allow common open source licenses + SPDX expressions
+allow = [
+    "Apache-2.0",
+    "MIT",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Zlib",
+    "CC0-1.0",
+    "MPL-2.0",
+    "BSL-1.0",
+    "Unlicense",
+    "0BSD",
+    "Unicode-3.0",
+    "CDLA-Permissive-2.0",
+]
+
+[sources]
+# Only allow crates from crates.io
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-git = []
+
+[advisories]
+# Advisory checks disabled for this workspace (too many transitive dependencies)

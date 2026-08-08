@@ -1,0 +1,14 @@
+id: k8s-manifest-audit
+info:
+  name: "Kubernetes Manifest IaC Audit"
+  severity: "High"
+  description: "Audits Kubernetes manifests for security issues including privileged containers and host path mounts."
+iac_audit:
+  - target: "deployment.yaml"
+    type: "kubernetes"
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "violation"
+          - "misconfiguration"

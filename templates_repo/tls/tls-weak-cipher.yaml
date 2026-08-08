@@ -1,0 +1,54 @@
+id: tls-weak-cipher-check
+info:
+  name: "TLS Weak Cipher Suite Detection"
+  severity: "High"
+  description: "Audits TLS connections for weak, deprecated, or null cipher suites and certificate issues."
+  compliance:
+    cwe: "CWE-327"
+    pci-dss: "4.1"
+tls:
+  - host: "{{Hostname}}"
+    port: 443
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "weak_cipher"
+          - "legacy_tls"
+
+  - host: "{{Hostname}}"
+    port: 993
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "weak_cipher"
+          - "expired"
+          - "legacy_tls"
+
+  - host: "{{Hostname}}"
+    port: 636
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "weak_cipher"
+          - "expired"
+
+  - host: "{{Hostname}}"
+    port: 443
+    min_version: "TLSv1.3"
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "weak_cipher"
+
+  - host: "{{Hostname}}"
+    port: 443
+    max_expiry_days: 30
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "expired"

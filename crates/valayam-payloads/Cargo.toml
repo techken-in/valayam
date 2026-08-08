@@ -1,0 +1,9 @@
+[package]
+license = "Apache-2.0"
+name = "valayam-payloads"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+tokio = { workspace = true, features = ["full"] }
+tracing = "0.1"

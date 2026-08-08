@@ -1,0 +1,15 @@
+id: database-exposure-check
+info:
+  name: "Database Exposure Check"
+  description: "Checks for exposed database services which could lead to data breaches"
+  severity: "Critical"
+  classification:
+    cve-2023-0002: {}
+port_scan:
+  - ports:
+      - 3306   # MySQL
+      - 5432   # PostgreSQL
+      - 1433   # MSSQL
+      - 1521   # Oracle
+      - 27017  # MongoDB
+      - 6379   # Redis

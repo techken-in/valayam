@@ -1,0 +1,15 @@
+[package]
+license = "Apache-2.0"
+name = "valayam-oob"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+tokio = { workspace = true, features = ["full"] }
+tokio-rustls.workspace = true
+rustls.workspace = true
+rand.workspace = true
+parking_lot.workspace = true
+chrono.workspace = true
+tracing = "0.1"
+anyhow.workspace = true

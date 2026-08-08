@@ -1,0 +1,44 @@
+image: rust:latest
+
+variables:
+  CARGO_HOME: $CI_PROJECT_DIR/.cargo
+
+cache:
+  paths:
+    - target/
+    - .cargo/
+
+stages:
+  - lint
+  - test
+  - build
+
+before_script:
+  - rustup component add clippy rustfmt
+  - rustup target add wasm32-unknown-unknown
+
+lint:
+  stage: lint
+  script:
+    - cargo fmt --all -- --check
+    - cargo clippy --all-targets --all-features -- -D warnings
+
+test:
+  stage: test
+  script:
+    - cargo test --workspace --verbose
+
+build:
+  stage: build
+  script:
+    - cd plugins-wasm
+    - |
+      for dir in pii-leak-audit header-scorecard cors-audit; do
+        if [ -d "$dir" ]; then
+          cd $dir
+          cargo build --target wasm32-unknown-unknown --release
+          cd ..
+        fi
+      done
+    - cd ..
+    - cargo build --release --verbose

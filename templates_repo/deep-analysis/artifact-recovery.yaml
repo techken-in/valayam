@@ -1,0 +1,9 @@
+id: deep-analysis-artifact-recovery
+info:
+  name: "Artifact Recovery & Secret Hunt"
+  severity: "High"
+  description: "Probes common paths for exposed backup files, configuration dumps, and leftover artifacts."
+deep_analysis:
+  - target: "https://{{Hostname}}"
+    analysis_type: "artifact_recovery"
+    prompt: "recover configs and secrets from common paths"

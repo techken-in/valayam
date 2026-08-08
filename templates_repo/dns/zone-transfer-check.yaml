@@ -1,0 +1,28 @@
+id: dns-zone-transfer-check
+info:
+  name: "DNS Zone Transfer Check"
+  severity: "High"
+  description: "Attempts DNS zone transfer (AXFR) to detect misconfigured DNS servers allowing zone data leakage."
+  compliance:
+    cwe: "CWE-200"
+dns:
+  - domain: "{{Hostname}}"
+    query_type: "AXFR"
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "IN\t+[A-Z]+\t+"
+          - "NS\t+"
+          - "MX\t+"
+          - "SOA\t+"
+          - "TXT\t+"
+
+  - domain: "{{Hostname}}"
+    query_type: "NS"
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "ns\\w*\\.\\w+\\.\\w+"
+          - "dns\\w*\\.\\w+\\.\\w+"

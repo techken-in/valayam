@@ -1,0 +1,14 @@
+id: cloud-azure-enum
+info:
+  name: "Azure Resource Enumeration"
+  severity: "Medium"
+  description: "Enumerates Azure resources, managed identities, and storage accounts via IMDS and API endpoints."
+  compliance:
+    cwe: "CWE-213"
+cloud:
+  - provider: "azure"
+    action: "list_resources"
+  - provider: "azure"
+    action: "metadata_probe"
+  - provider: "azure"
+    action: "enum_buckets"

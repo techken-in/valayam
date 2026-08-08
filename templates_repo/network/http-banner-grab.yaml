@@ -1,0 +1,48 @@
+id: network-http-banner-grab
+info:
+  name: "HTTP Banner Grabbing"
+  severity: "Info"
+  description: "Connects to common HTTP ports and retrieves server banners to identify web server software and versions."
+  compliance:
+    cwe: "CWE-200"
+network:
+  - host: "{{Hostname}}"
+    ports:
+      - "80"
+      - "443"
+      - "8080"
+      - "8443"
+      - "3000"
+      - "5000"
+      - "8000"
+      - "8888"
+    protocol: "tcp"
+    banner_timeout_ms: 3000
+    send_probe: "GET / HTTP/1.0\r\n\r\n"
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "Server:.*"
+          - "HTTP/[0-9]\\.[0-9]"
+          - "Apache"
+          - "nginx"
+          - "IIS"
+          - "lighttpd"
+          - "Caddy"
+          - "Tomcat"
+
+  - host: "{{Hostname}}"
+    ports:
+      - "443"
+      - "8443"
+    protocol: "tcp"
+    banner_timeout_ms: 2000
+    send_probe: "HEAD / HTTP/1.0\r\n\r\n"
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - "Server:"
+          - "Strict-Transport-Security"
+          - "X-Frame-Options"

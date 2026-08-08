@@ -1,0 +1,14 @@
+id: easm-external-recon
+info:
+  name: "External Attack Surface Reconnaissance"
+  severity: "Info"
+  description: "Enumerates subdomains and external-facing assets using multiple OSINT sources (crtsh, AlienVault, Shodan)."
+  compliance:
+    cwe: "CWE-200"
+easm:
+  - sources:
+      - "crtsh"
+      - "alienvault"
+      - "shodan"
+    domain: "{{Hostname}}"
+    max_results: 500

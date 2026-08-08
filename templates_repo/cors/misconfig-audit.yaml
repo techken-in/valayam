@@ -1,0 +1,18 @@
+id: cors-misconfig-audit
+info:
+  name: "CORS Misconfiguration Audit"
+  severity: "High"
+  description: "Tests CORS configurations by sending cross-origin requests from attacker-controlled origins."
+  compliance:
+    owasp: "A01:2021"
+    cwe: "CWE-942"
+cors_audit:
+  - target: "https://{{Hostname}}"
+    origins_to_test:
+      - "https://evil.com"
+      - "https://attacker.org"
+      - "null"
+      - "https://{{Hostname}}.evil.com"
+      - "https://{{Hostname}}evil.com"
+      - "file://"
+      - "https://evil{{Hostname}}.com"

@@ -1,0 +1,48 @@
+id: network-udp-dns-detect
+info:
+  name: "UDP DNS Service Detection"
+  severity: "Info"
+  description: "Detects open DNS resolvers and identifies DNS server software via UDP probing."
+network:
+  - host: "{{Hostname}}"
+    ports:
+      - "53"
+    protocol: "udp"
+    banner_timeout_ms: 3000
+    send_probe: "AAAAAgAAAAAAAAAAAAAAAAAAAAAA"
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - ".*"
+    negative: true
+
+  - host: "{{Hostname}}"
+    ports:
+      - "161"
+      - "162"
+    protocol: "udp"
+    banner_timeout_ms: 3000
+    send_probe: "0V"
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - ".*"
+    negative: true
+
+  - host: "{{Hostname}}"
+    ports:
+      - "123"
+    protocol: "udp"
+    banner_timeout_ms: 2000
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "NTP"
+      - type: status
+        part: status
+        status:
+          - 200
+    matcher_condition: or

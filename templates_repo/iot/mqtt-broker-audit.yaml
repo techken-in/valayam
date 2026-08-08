@@ -1,0 +1,21 @@
+id: iot-mqtt-broker-audit
+info:
+  name: "IoT MQTT Broker Security Audit"
+  severity: "High"
+  description: "Audits MQTT brokers for anonymous access, topic subscription rights, and unauthorized publishing."
+  compliance:
+    cwe: "CWE-306"
+iot_audit:
+  - target: "mqtt://{{Hostname}}:1883"
+    protocol: "mqtt"
+    topics:
+      - "#"
+      - "$SYS/#"
+      - "sensor/#"
+      - "device/#"
+
+  - target: "mqtts://{{Hostname}}:8883"
+    protocol: "mqtt"
+    topics:
+      - "#"
+      - "admin/#"
