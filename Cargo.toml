@@ -37,6 +37,7 @@ resolver = "2"
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
+description = "Valayam: Advanced web application security scanner"
 
 [workspace.dependencies]
 valayam-models = { path = "crates/valayam-models" }

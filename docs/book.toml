@@ -1,7 +1,6 @@
 [book]
 authors = ["Valayam Contributors"]
 language = "en"
-multilingual = false
 src = "src"
 title = "Valayam Documentation"
 
@@ -10,6 +9,6 @@ build-dir = "book"
 create-missing = false
 
 [output.html]
-git-repository-url = "https://github.com/1dveeran/valayam"
-edit-url-template = "https://github.com/1dveeran/valayam/edit/main/docs/{path}"
+git-repository-url = "https://github.com/techken-in/valayam"
+edit-url-template = "https://github.com/techken-in/valayam/edit/main/docs/{path}"
 mathjax-support = true
