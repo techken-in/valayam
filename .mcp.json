@@ -1,0 +1,12 @@
+{
+  "name": "valayam-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for Valayam security scanner - run scans, manage templates, generate reports",
+  "transport": "stdio",
+  "command": "cargo",
+  "args": ["run", "--package", "valayam-mcp", "--", "--config", "config/mcp.toml"],
+  "cwd": "C:/Users/venthan/Desktop/Project/Rust/valayam",
+  "env": {
+    "VALAYAM_HOME": "~/.valayam"
+  }
+}

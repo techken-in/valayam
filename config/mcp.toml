@@ -1,0 +1,16 @@
+# Valayam MCP Server Configuration
+
+[server]
+# gRPC endpoint for the valayam scanner
+grpc_endpoint = "http://localhost:50051"
+
+# TLS configuration (optional)
+# tls_cert_path = "~/.valayam/certs/client.pem"
+# tls_key_path = "~/.valayam/certs/client.key"
+# tls_ca_path = "~/.valayam/certs/ca.pem"
+
+# Valayam home directory for templates, plugins, config
+valayam_home = "~/.valayam"
+
+# CLI binary name or path
+cli_binary = "valayam"

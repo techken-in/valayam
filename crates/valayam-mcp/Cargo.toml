@@ -1,0 +1,67 @@
+[package]
+name = "valayam-mcp"
+version = "0.1.0"
+edition = "2021"
+description = "Model Context Protocol server for Valayam security scanner"
+license = "Apache-2.0"
+publish = false
+
+[[bin]]
+name = "valayam-mcp"
+path = "src/main.rs"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+tokio-stream = "0.1"
+futures-util = "0.3"
+async-trait = "0.1"
+
+# MCP primitives
+rmcp = { version = "0.1", features = ["server", "macros", "transport-io"] }
+
+# HTTP for API/gRPC gateway
+reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
+
+# gRPC
+tonic = { version = "0.11", features = ["tls", "tls-roots"] }
+prost = "0.12"
+
+# Shared types
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml = "0.9"
+uuid = { version = "1", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+
+# Structured logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Config loading
+config = { version = "0.14", default-features = false, features = ["toml"] }
+toml = "0.8"
+
+# CLI
+clap = { version = "4", features = ["derive"] }
+anyhow = "1"
+
+# JSON Schema for tool parameters
+schemars = "0.8"
+
+# Directory utilities
+dirs = "5"
+
+# Valayam internal crates
+valayam-common = { path = "../valayam-common" }
+valayam-config = { path = "../valayam-config" }
+valayam-engine = { path = "../valayam-engine" }
+valayam-models = { path = "../valayam-models" }
+valayam-state = { path = "../valayam-state" }
+valayam-reporter = { path = "../valayam-reporter" }
+valayam-proto = { path = "../valayam-proto" }
+valayam-api = { path = "../valayam-api" }
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1

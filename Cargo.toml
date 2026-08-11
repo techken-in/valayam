@@ -26,6 +26,7 @@ members = [
     "plugins-wasm/cors-audit",
     "crates/valayam-api",
     "crates/valayam-config",
+    "crates/valayam-mcp",
     "crates/valayam-agent", "crates/valayam-tests",
 ]
 exclude = [
