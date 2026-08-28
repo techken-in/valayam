@@ -89,10 +89,15 @@ impl ScanPlugin for HttpScanPlugin {
                     let path =
                         std::path::PathBuf::from(format!("plugins-wasm/bin/{}.wasm", wasm_name));
                     if path.exists() {
+                        let mut caps = std::collections::HashSet::new();
+                        caps.insert(valayam_engine::vpa::PluginCapability::Http);
+                        caps.insert(valayam_engine::vpa::PluginCapability::Network);
+                        
                         let plugin = valayam_engine::wasm_plugin::WasmPluginBridge::new(
                             wasm_name.clone(),
                             path,
                             valayam_engine::wasm_plugin::PluginConfig::default(),
+                            caps,
                         );
 
                         tracing::info!(
@@ -113,6 +118,171 @@ impl ScanPlugin for HttpScanPlugin {
                 }
             }
 
+            for res in results {
+                let _ = ctx.finding_tx.send(res).await;
+            }
+            PluginOutcome::Matched { count: 1 }
+        } else {
+            PluginOutcome::NoMatch
+        }
+    }
+}
+
+pub struct WebsocketScanPlugin;
+
+impl WebsocketScanPlugin {
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+#[async_trait]
+impl ScanPlugin for WebsocketScanPlugin {
+    fn name(&self) -> &str {
+        "websocket_scan"
+    }
+
+    fn is_applicable(&self, template: &VulnerabilityTemplate) -> bool {
+        !template.websocket.is_empty()
+    }
+
+    fn validate_config(&self, _template: &VulnerabilityTemplate) -> Result<(), valayam_models::error::ScannerError> {
+        Ok(())
+    }
+
+    async fn init(&self) -> Result<(), valayam_models::error::ScannerError> {
+        Ok(())
+    }
+
+    async fn shutdown(&self) -> Result<(), valayam_models::error::ScannerError> {
+        Ok(())
+    }
+
+    async fn execute(&self, ctx: &ScanContext) -> PluginOutcome {
+        let mut vars = ctx.snapshot_variables().await;
+        let template = ctx.template.clone();
+
+        let results = crate::features::websocket_scan::executor::execute(
+            &ctx.target,
+            &template.websocket,
+            &template.id,
+            &template.info as &dyn TemplateMetadata,
+            &mut vars,
+        ).await;
+
+        if !results.is_empty() {
+            for res in results {
+                let _ = ctx.finding_tx.send(res).await;
+            }
+            PluginOutcome::Matched { count: 1 }
+        } else {
+            PluginOutcome::NoMatch
+        }
+    }
+}
+
+pub struct GraphqlAuditPlugin {
+    client: Arc<StealthHttpClient>,
+}
+
+impl GraphqlAuditPlugin {
+    pub fn new(client: Arc<StealthHttpClient>) -> Self {
+        Self { client }
+    }
+}
+
+#[async_trait]
+impl ScanPlugin for GraphqlAuditPlugin {
+    fn name(&self) -> &str {
+        "graphql_audit"
+    }
+
+    fn is_applicable(&self, template: &VulnerabilityTemplate) -> bool {
+        !template.graphql_audit.is_empty()
+    }
+
+    fn validate_config(&self, _template: &VulnerabilityTemplate) -> Result<(), valayam_models::error::ScannerError> {
+        Ok(())
+    }
+
+    async fn init(&self) -> Result<(), valayam_models::error::ScannerError> {
+        Ok(())
+    }
+
+    async fn shutdown(&self) -> Result<(), valayam_models::error::ScannerError> {
+        Ok(())
+    }
+
+    async fn execute(&self, ctx: &ScanContext) -> PluginOutcome {
+        let mut vars = ctx.snapshot_variables().await;
+        let template = ctx.template.clone();
+
+        let results = crate::features::graphql_audit::executor::execute(
+            &self.client,
+            &ctx.target,
+            &template.graphql_audit,
+            &template.id,
+            &template.info as &dyn TemplateMetadata,
+            &mut vars,
+        ).await;
+
+        if !results.is_empty() {
+            for res in results {
+                let _ = ctx.finding_tx.send(res).await;
+            }
+            PluginOutcome::Matched { count: 1 }
+        } else {
+            PluginOutcome::NoMatch
+        }
+    }
+}
+
+pub struct GrpcAuditPlugin {
+    client: Arc<StealthHttpClient>,
+}
+
+impl GrpcAuditPlugin {
+    pub fn new(client: Arc<StealthHttpClient>) -> Self {
+        Self { client }
+    }
+}
+
+#[async_trait]
+impl ScanPlugin for GrpcAuditPlugin {
+    fn name(&self) -> &str {
+        "grpc_audit"
+    }
+
+    fn is_applicable(&self, template: &VulnerabilityTemplate) -> bool {
+        !template.grpc_audit.is_empty()
+    }
+
+    fn validate_config(&self, _template: &VulnerabilityTemplate) -> Result<(), valayam_models::error::ScannerError> {
+        Ok(())
+    }
+
+    async fn init(&self) -> Result<(), valayam_models::error::ScannerError> {
+        Ok(())
+    }
+
+    async fn shutdown(&self) -> Result<(), valayam_models::error::ScannerError> {
+        Ok(())
+    }
+
+    async fn execute(&self, ctx: &ScanContext) -> PluginOutcome {
+        let mut vars = ctx.snapshot_variables().await;
+        let template = ctx.template.clone();
+
+        let results = crate::features::grpc_audit::executor::execute(
+            &self.client,
+            &ctx.target,
+            &template.grpc_audit,
+            &template.id,
+            &template.info as &dyn TemplateMetadata,
+            &mut vars,
+        ).await;
+
+        if !results.is_empty() {
             for res in results {
                 let _ = ctx.finding_tx.send(res).await;
             }
@@ -310,6 +480,10 @@ impl ScanPlugin for ThreatIntelPlugin {
                 description: Some("The target is communicating with or hosted on a known malicious infrastructure.".to_string()),
                 solution: Some("Block traffic to this indicator and investigate internal systems communicating with it.".to_string()),
                 extracted_data: Some(format!("Target host '{}' matched known threat intel indicators.", host)),
+                evidence_request: None,
+                evidence_response: None,
+                tags: vec![],
+                protocol: None,
                 metadata: std::collections::HashMap::new(),
             };
             let _ = ctx.finding_tx.send(finding).await;
@@ -371,6 +545,10 @@ impl ScanPlugin for OobPlugin {
                     description: Some("The target triggered an out-of-band network interaction (DNS/HTTP) to our server, indicating a potential injection vulnerability (e.g., SSRF, RCE, or blind SQLi).".to_string()),
                     solution: Some("Validate and sanitize all inputs to prevent unintended network requests.".to_string()),
                     extracted_data: Some(format!("Received {} OOB interactions. First raw payload: {}", hits.len(), hits[0].raw_request)),
+                    evidence_request: None,
+                    evidence_response: None,
+                    tags: vec![],
+                    protocol: None,
                     metadata: std::collections::HashMap::new(),
                 };
                 let _ = ctx.finding_tx.send(finding).await;
@@ -441,10 +619,131 @@ impl ScanPlugin for ShellsPlugin {
                         "Successfully established TCP connection to {}",
                         addr
                     )),
+                    evidence_request: None,
+                    evidence_response: None,
+                    tags: vec![],
+                    protocol: None,
                     metadata: std::collections::HashMap::new(),
                 };
                 let _ = ctx.finding_tx.send(finding).await;
                 return PluginOutcome::Matched { count: 1 };
+            }
+        }
+        PluginOutcome::NoMatch
+    }
+}
+
+pub struct AuthLogicPlugin {
+    client: Arc<StealthHttpClient>,
+}
+
+impl AuthLogicPlugin {
+    pub fn new(client: Arc<StealthHttpClient>) -> Self {
+        Self { client }
+    }
+}
+
+#[async_trait]
+impl ScanPlugin for AuthLogicPlugin {
+    fn name(&self) -> &str {
+        "auth_logic"
+    }
+
+    fn is_applicable(&self, template: &VulnerabilityTemplate) -> bool {
+        template.auth.is_some() && !template.logic.is_empty()
+    }
+
+    fn validate_config(&self, _template: &VulnerabilityTemplate) -> Result<(), valayam_models::error::ScannerError> {
+        Ok(())
+    }
+
+    async fn init(&self) -> Result<(), valayam_models::error::ScannerError> {
+        Ok(())
+    }
+
+    async fn shutdown(&self) -> Result<(), valayam_models::error::ScannerError> {
+        Ok(())
+    }
+
+    async fn execute(&self, ctx: &ScanContext) -> PluginOutcome {
+        let mut vars = ctx.snapshot_variables().await;
+        let template = ctx.template.clone();
+
+        let results = crate::features::auth_logic::executor::execute(
+            &self.client,
+            &ctx.target,
+            &template.auth,
+            &template.logic,
+            &template.id,
+            &template.info as &dyn valayam_models::templates::schema::TemplateMetadata,
+            &mut vars,
+        ).await;
+
+        if !results.is_empty() {
+            let count = results.len();
+            for res in results {
+                let _ = ctx.finding_tx.send(res).await;
+            }
+            PluginOutcome::Matched { count }
+        } else {
+            PluginOutcome::NoMatch
+        }
+    }
+}
+
+pub struct SubdomainTakeoverPlugin;
+
+impl SubdomainTakeoverPlugin {
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+#[async_trait]
+impl ScanPlugin for SubdomainTakeoverPlugin {
+    fn name(&self) -> &str {
+        "subdomain_takeover"
+    }
+
+    fn is_applicable(&self, template: &VulnerabilityTemplate) -> bool {
+        !template.subdomain_takeover.is_empty()
+    }
+
+    fn validate_config(&self, _template: &VulnerabilityTemplate) -> Result<(), valayam_models::error::ScannerError> {
+        Ok(())
+    }
+
+    async fn init(&self) -> Result<(), valayam_models::error::ScannerError> {
+        Ok(())
+    }
+
+    async fn shutdown(&self) -> Result<(), valayam_models::error::ScannerError> {
+        Ok(())
+    }
+
+    async fn execute(&self, ctx: &ScanContext) -> PluginOutcome {
+        let mut vars = ctx.snapshot_variables().await;
+        let template = ctx.template.clone();
+
+        if !template.subdomain_takeover.is_empty() {
+            let mut all_results = Vec::new();
+            for subdomain_config in &template.subdomain_takeover {
+                let results = crate::features::subdomain_takeover::executor::execute(
+                    &ctx.target,
+                    subdomain_config,
+                    &template.id,
+                    &template.info as &dyn valayam_models::templates::schema::TemplateMetadata,
+                    &mut vars,
+                ).await;
+                all_results.extend(results);
+            }
+
+            if !all_results.is_empty() {
+                let count = all_results.len();
+                for res in all_results {
+                    let _ = ctx.finding_tx.send(res).await;
+                }
+                return PluginOutcome::Matched { count };
             }
         }
         PluginOutcome::NoMatch

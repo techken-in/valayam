@@ -22,8 +22,11 @@ valayam-config = { path = "../valayam-config" }
 valayam-models = { workspace = true }
 valayam-network = { workspace = true }
 valayam-common = { path = "../valayam-common" }
+valayam-diff = { path = "../valayam-diff" }
 indicatif = { workspace = true }
 anyhow = { workspace = true }
+ratatui = "0.29.0"
+crossterm = "0.28.1"
 futures = { workspace = true }
 serde_json = { workspace = true }
 tracing = "0.1.44"

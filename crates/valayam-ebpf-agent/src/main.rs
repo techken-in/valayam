@@ -8,7 +8,9 @@ use tokio_stream::wrappers::ReceiverStream;
 #[cfg(target_os = "linux")]
 use aya::programs::KProbe;
 #[cfg(target_os = "linux")]
-use aya::Ebpf;
+use aya::Bpf;
+use std::time::Duration;
+use tokio::time::sleep;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

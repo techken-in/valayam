@@ -1,18 +1,22 @@
 //! Scan state persistence for Valayam.
 //!
-//! `StateDB` stores and loads scan snapshots as JSON files with atomic writes.
+//! `StateDB` stores and loads scan snapshots as bincode files with atomic writes.
 //! Supports pause/resume workflows across CLI, agent, and distributed nodes.
 
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-#[derive(Serialize, Deserialize)]
-pub struct ScanSnapshot {
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct ScanCheckpoint {
     pub id: String,
-    pub pending_targets: Vec<String>,
-    pub completed_targets: Vec<String>,
-    pub timestamp: u64,
+    pub pending_tasks: Vec<(String, String)>,
+    pub completed_tasks: Vec<(String, String)>,
+    pub finding_count: usize,
+    pub severity_counts: HashMap<String, usize>,
+    pub started_at: u64,
+    pub updated_at: u64,
 }
 
 pub struct StateDB {
@@ -31,23 +35,33 @@ impl StateDB {
     pub fn save_state(
         &self,
         state_id: &str,
-        pending: &[String],
-        completed: &[String],
+        pending: &[(String, String)],
+        completed: &[(String, String)],
+        finding_count: usize,
+        severity_counts: HashMap<String, usize>,
     ) -> std::io::Result<()> {
-        let snapshot = ScanSnapshot {
+        let snapshot = ScanCheckpoint {
             id: state_id.to_string(),
-            pending_targets: pending.to_vec(),
-            completed_targets: completed.to_vec(),
-            timestamp: std::time::SystemTime::now()
+            pending_tasks: pending.to_vec(),
+            completed_tasks: completed.to_vec(),
+            finding_count,
+            severity_counts,
+            started_at: std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs(),
+            updated_at: std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap_or_default()
                 .as_secs(),
         };
 
-        let file_path = self.base_dir.join(format!("{}.json", state_id));
-        let tmp_path = self.base_dir.join(format!("{}.json.tmp", state_id));
+        let file_path = self.base_dir.join(format!("{}.bin", state_id));
+        let tmp_path = self.base_dir.join(format!("{}.bin.tmp", state_id));
 
-        let data = serde_json::to_string_pretty(&snapshot)?;
+        let data = bincode::serialize(&snapshot).map_err(|e| {
+            std::io::Error::new(std::io::ErrorKind::InvalidData, e)
+        })?;
 
         // Atomic write: write to temp file first, then rename over the real file
         fs::write(&tmp_path, data)?;
@@ -59,18 +73,18 @@ impl StateDB {
     pub fn load_state(
         &self,
         state_id: &str,
-    ) -> std::io::Result<Option<(Vec<String>, Vec<String>)>> {
-        let file_path = self.base_dir.join(format!("{}.json", state_id));
+    ) -> std::io::Result<Option<ScanCheckpoint>> {
+        let file_path = self.base_dir.join(format!("{}.bin", state_id));
 
         if !file_path.exists() {
             return Ok(None);
         }
 
-        let data = fs::read_to_string(file_path)?;
-        let snapshot: ScanSnapshot = serde_json::from_str(&data)
+        let data = fs::read(file_path)?;
+        let snapshot: ScanCheckpoint = bincode::deserialize(&data)
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
 
-        Ok(Some((snapshot.pending_targets, snapshot.completed_targets)))
+        Ok(Some(snapshot))
     }
 }
 
@@ -79,31 +93,45 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_scan_snapshot_serde() -> anyhow::Result<()> {
-        let snapshot = ScanSnapshot {
+    fn test_scan_checkpoint_serde() -> anyhow::Result<()> {
+        let mut severity_counts = HashMap::new();
+        severity_counts.insert("high".to_string(), 1);
+        let snapshot = ScanCheckpoint {
             id: "test-scan-001".into(),
-            pending_targets: vec!["https://example.com".into(), "https://test.com".into()],
-            completed_targets: vec!["https://done.com".into()],
-            timestamp: 1700000000,
+            pending_tasks: vec![
+                ("https://example.com".into(), "templates/x.yaml".into()),
+                ("https://test.com".into(), "templates/y.yaml".into())
+            ],
+            completed_tasks: vec![
+                ("https://done.com".into(), "templates/z.yaml".into())
+            ],
+            finding_count: 5,
+            severity_counts,
+            started_at: 1700000000,
+            updated_at: 1700000000,
         };
-        let json = serde_json::to_string(&snapshot)?;
-        let back: ScanSnapshot = serde_json::from_str(&json)?;
+        let data = bincode::serialize(&snapshot)?;
+        let back: ScanCheckpoint = bincode::deserialize(&data)?;
         assert_eq!(back.id, "test-scan-001");
-        assert_eq!(back.pending_targets.len(), 2);
-        assert_eq!(back.timestamp, 1700000000);
+        assert_eq!(back.pending_tasks.len(), 2);
+        assert_eq!(back.finding_count, 5);
+        assert_eq!(back.started_at, 1700000000);
         Ok(())
     }
 
     #[test]
-    fn test_scan_snapshot_empty_lists() -> anyhow::Result<()> {
-        let snapshot = ScanSnapshot {
+    fn test_scan_checkpoint_empty_lists() -> anyhow::Result<()> {
+        let snapshot = ScanCheckpoint {
             id: "empty-scan".into(),
-            pending_targets: vec![],
-            completed_targets: vec![],
-            timestamp: 1700000000,
+            pending_tasks: vec![],
+            completed_tasks: vec![],
+            finding_count: 0,
+            severity_counts: HashMap::new(),
+            started_at: 1700000000,
+            updated_at: 1700000000,
         };
-        let json = serde_json::to_string(&snapshot)?;
-        assert!(json.contains("empty-scan"));
+        let data = bincode::serialize(&snapshot)?;
+        assert!(!data.is_empty());
         Ok(())
     }
 
@@ -121,12 +149,18 @@ mod tests {
     fn test_state_save_and_load() -> anyhow::Result<()> {
         let dir = tempfile::tempdir()?;
         let db = StateDB::new(dir.path())?;
-        db.save_state("scan-1", &["https://target.com".into()], &[])?;
+        db.save_state(
+            "scan-1",
+            &[("https://target.com".into(), "template.yaml".into())],
+            &[],
+            0,
+            HashMap::new(),
+        )?;
         let loaded = db.load_state("scan-1")?;
         assert!(loaded.is_some());
-        let (pending, completed) = loaded.unwrap();
-        assert_eq!(pending, vec!["https://target.com"]);
-        assert!(completed.is_empty());
+        let snapshot = loaded.unwrap();
+        assert_eq!(snapshot.pending_tasks, vec![("https://target.com".to_string(), "template.yaml".to_string())]);
+        assert!(snapshot.completed_tasks.is_empty());
         Ok(())
     }
 
@@ -143,15 +177,24 @@ mod tests {
     fn test_state_overwrite() -> anyhow::Result<()> {
         let dir = tempfile::tempdir()?;
         let db = StateDB::new(dir.path())?;
-        db.save_state("s", &["https://old.com".into()], &[])?;
         db.save_state(
             "s",
-            &["https://new.com".into()],
-            &["https://old.com".into()],
+            &[("https://old.com".into(), "tmpl1".into())],
+            &[],
+            0,
+            HashMap::new(),
         )?;
-        let (p, c) = db.load_state("s")?.unwrap();
-        assert_eq!(p, vec!["https://new.com"]);
-        assert_eq!(c, vec!["https://old.com"]);
+        db.save_state(
+            "s",
+            &[("https://new.com".into(), "tmpl2".into())],
+            &[("https://old.com".into(), "tmpl1".into())],
+            1,
+            HashMap::new(),
+        )?;
+        let snapshot = db.load_state("s")?.unwrap();
+        assert_eq!(snapshot.pending_tasks, vec![("https://new.com".to_string(), "tmpl2".to_string())]);
+        assert_eq!(snapshot.completed_tasks, vec![("https://old.com".to_string(), "tmpl1".to_string())]);
+        assert_eq!(snapshot.finding_count, 1);
         Ok(())
     }
 }

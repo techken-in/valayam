@@ -1,6 +1,7 @@
 pub mod agent_config;
 pub mod cli;
 pub mod config;
+pub mod dashboard;
 pub mod notifications;
 pub mod orchestrator;
 pub mod plugin_cli;
@@ -116,6 +117,10 @@ pub async fn run_cli() -> anyhow::Result<()> {
     // Handle template subcommand — early return (artifact store management)
     if let Some(cli::Commands::Template { action }) = &args.command {
         return handle_template_command(action).await;
+    }
+    // Handle diff subcommand — early return
+    if let Some(cli::Commands::Diff { baseline, current }) = &args.command {
+        return handle_diff_command(baseline, current).await;
     }
     // ── Template path resolution ──────────────────────────────────────────
     let (template_path, is_nuclei) = resolve_template(&args);
@@ -335,6 +340,16 @@ async fn handle_plugin_command(action: &cli::PluginCommands) -> anyhow::Result<(
         cli::PluginCommands::List => {
             crate::plugin_cli::list_plugins()
                 .map_err(|e| anyhow::anyhow!("Failed to list plugins: {}", e))?;
+        }
+        cli::PluginCommands::Search { query } => {
+            crate::plugin_cli::search_plugins(query)
+                .await
+                .map_err(|e| anyhow::anyhow!("Failed to search plugins: {}", e))?;
+        }
+        cli::PluginCommands::Publish { file } => {
+            crate::plugin_cli::publish_plugin(file)
+                .await
+                .map_err(|e| anyhow::anyhow!("Failed to publish plugin: {}", e))?;
         }
     }
     Ok(())
@@ -722,6 +737,49 @@ async fn handle_template_command(action: &cli::TemplateCommands) -> anyhow::Resu
             }
         }
     }
+    Ok(())
+}
+
+async fn handle_diff_command(baseline: &str, current: &str) -> anyhow::Result<()> {
+    use std::fs;
+    use colored::Colorize;
+    use valayam_diff::DiffReport;
+    use valayam_models::finding::FindingOwned;
+
+    tracing::info!("Running scan diff between {} and {}", baseline, current);
+    
+    let base_content = fs::read_to_string(baseline)?;
+    let curr_content = fs::read_to_string(current)?;
+    
+    let mut base_findings = Vec::new();
+    for line in base_content.lines() {
+        if let Ok(f) = serde_json::from_str::<FindingOwned>(line) {
+            base_findings.push(f);
+        }
+    }
+    
+    let mut curr_findings = Vec::new();
+    for line in curr_content.lines() {
+        if let Ok(f) = serde_json::from_str::<FindingOwned>(line) {
+            curr_findings.push(f);
+        }
+    }
+
+    let report = DiffReport::compare(&base_findings, &curr_findings);
+
+    println!("{}", "\n--- Scan Diff Report ---".bright_cyan().bold());
+    println!("{} New Findings: {}", "[+]".red().bold(), report.new.len());
+    for f in &report.new {
+        println!("  {} ({})", f.template_name, f.target);
+    }
+    
+    println!("{} Resolved Findings: {}", "[-]".green().bold(), report.resolved.len());
+    for f in &report.resolved {
+        println!("  {} ({})", f.template_name, f.target);
+    }
+    
+    println!("{} Recurring Findings: {}", "[~]".yellow().bold(), report.recurring.len());
+    
     Ok(())
 }
 

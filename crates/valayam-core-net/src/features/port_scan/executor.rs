@@ -393,12 +393,22 @@ pub async fn execute(
         all_findings.extend(findings);
 
         if !all_findings.is_empty() {
-            return Some(FindingOwned::from_template_and_info(
+            let mut finding = FindingOwned::from_template_and_info(
                 template_id,
                 template_meta,
                 host_to_scan,
                 format!("Sensitive services detected: {}", all_findings.join("; ")),
-            ));
+            );
+            finding.protocol = Some("tcp".to_string());
+            finding.evidence_request = Some(format!("TCP Scan on ports: {}", ports_to_scan.join(", ")));
+            let banners: Vec<String> = port_results
+                .iter()
+                .filter_map(|p| p.banner.as_deref().map(|b| format!("Port {}: {}", p.port, b)))
+                .collect();
+            if !banners.is_empty() {
+                finding.evidence_response = Some(banners.join("\n"));
+            }
+            return Some(finding);
         }
     }
 

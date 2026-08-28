@@ -249,6 +249,10 @@ mod tests {
             description: None,
             solution: None,
             extracted_data: None,
+            evidence_request: None,
+            evidence_response: None,
+            tags: vec![],
+            protocol: None,
             metadata: Default::default(),
         };
         let key = f.dedup_key();
@@ -301,6 +305,10 @@ mod tests {
             description: Some("SQLi detected".into()),
             solution: Some("Use prepared statements".into()),
             extracted_data: Some("admin' OR 1=1".into()),
+            evidence_request: None,
+            evidence_response: None,
+            tags: vec![],
+            protocol: None,
             metadata: [("cwe".into(), "89".into())].into(),
         };
 
@@ -511,6 +519,10 @@ mod tests {
             description: None, // Should be auto-injected
             solution: None,
             extracted_data: None,
+            evidence_request: None,
+            evidence_response: None,
+            tags: vec![],
+            protocol: None,
             metadata: Default::default(),
         };
 
@@ -610,6 +622,10 @@ mod tests {
             description: None,
             solution: None,
             extracted_data: None,
+            evidence_request: None,
+            evidence_response: None,
+            tags: vec![],
+            protocol: None,
             metadata: HashMap::new(),
         }
     }

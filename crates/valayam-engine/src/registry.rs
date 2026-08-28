@@ -58,7 +58,8 @@ impl RetryConfig {
 
 /// Documentation for this item.
 pub struct PluginRegistry {
-    plugins: Arc<Mutex<Vec<Arc<dyn ScanPlugin>>>>,
+    core_plugins: Arc<Mutex<Vec<Arc<dyn ScanPlugin>>>>,
+    external_plugins: Arc<std::sync::RwLock<Vec<Arc<dyn ScanPlugin>>>>,
     pub_key: Option<[u8; 32]>,
     retry_config: RetryConfig,
     plugin_config: crate::wasm_plugin::PluginConfig,
@@ -77,7 +78,8 @@ impl PluginRegistry {
     /// Create a new PluginRegistry with an optional trusted public key for signature verification
     pub fn with_key(pub_key: Option<[u8; 32]>) -> Self {
         Self {
-            plugins: Arc::new(Mutex::new(Vec::new())),
+            core_plugins: Arc::new(Mutex::new(Vec::new())),
+            external_plugins: Arc::new(std::sync::RwLock::new(Vec::new())),
             pub_key,
             retry_config: RetryConfig::default(),
             plugin_config: crate::wasm_plugin::PluginConfig::default(),
@@ -112,11 +114,16 @@ impl PluginRegistry {
 
     /// Returns a list of all currently registered plugins.
     pub fn list_plugins(&self) -> Vec<String> {
-        self.plugins
+        let mut names: Vec<String> = self
+            .core_plugins
             .lock()
             .iter()
             .map(|p| p.name().to_string())
-            .collect()
+            .collect();
+        if let Ok(ext) = self.external_plugins.read() {
+            names.extend(ext.iter().map(|p| p.name().to_string()));
+        }
+        names
     }
 
     /// Documentation for this item.
@@ -147,7 +154,7 @@ impl PluginRegistry {
             version = plugin.version(),
             "registered plugin"
         );
-        self.plugins.lock().push(Arc::new(plugin));
+        self.core_plugins.lock().push(Arc::new(plugin));
     }
 
     /// Documentation for this item.
@@ -155,6 +162,8 @@ impl PluginRegistry {
         if !dir_path.exists() {
             return Ok(()); // No external plugins directory
         }
+
+        let mut loaded = Vec::new();
 
         // Honour a configured cache_dir (Phase 3 worker fetch-on-demand); else the
         // platform default.
@@ -191,19 +200,21 @@ impl PluginRegistry {
                                 let entrypoint_path = extract_dir.join(&manifest.entrypoint);
                                 if manifest.runtime == "wasm" {
                                     tracing::info!(plugin = %manifest.name, "Loading VPA WASM plugin");
+                                    let capabilities: std::collections::HashSet<_> = manifest.capabilities.clone().into_iter().collect();
                                     let plugin = crate::wasm_plugin::WasmPluginBridge::new(
                                         manifest.name.clone(),
                                         entrypoint_path,
                                         self.plugin_config.clone(),
+                                        capabilities,
                                     );
-                                    self.register(plugin);
+                                    loaded.push(Arc::new(plugin) as Arc<dyn ScanPlugin>);
                                 } else if manifest.runtime == "grpc" {
                                     tracing::info!(plugin = %manifest.name, "Loading VPA gRPC plugin");
                                     let plugin = crate::grpc_plugin::GrpcPluginBridge::new(
                                         manifest.name.clone(),
                                         entrypoint_path,
                                     );
-                                    self.register(plugin);
+                                    loaded.push(Arc::new(plugin) as Arc<dyn ScanPlugin>);
                                 } else {
                                     tracing::warn!(plugin = %manifest.name, runtime = %manifest.runtime, "Unknown VPA runtime");
                                 }
@@ -214,12 +225,19 @@ impl PluginRegistry {
                         }
                     } else if ext == "wasm" {
                         tracing::info!(file = %path.display(), "Loading external WASM plugin");
+                        // Default to all capabilities for standalone WASM files (backward compatibility)
+                        let mut default_caps = std::collections::HashSet::new();
+                        default_caps.insert(crate::vpa::PluginCapability::Http);
+                        default_caps.insert(crate::vpa::PluginCapability::Dns);
+                        default_caps.insert(crate::vpa::PluginCapability::Network);
+                        default_caps.insert(crate::vpa::PluginCapability::Oob);
                         let plugin = crate::wasm_plugin::WasmPluginBridge::new(
                             file_name,
                             path,
                             self.plugin_config.clone(),
+                            default_caps,
                         );
-                        self.register(plugin);
+                        loaded.push(Arc::new(plugin) as Arc<dyn ScanPlugin>);
                     } else if ext == "exe"
                         || ext == "sh"
                         || ext == "bat"
@@ -229,7 +247,7 @@ impl PluginRegistry {
                     {
                         tracing::info!(file = %path.display(), "Loading external gRPC plugin");
                         let plugin = crate::grpc_plugin::GrpcPluginBridge::new(file_name, path);
-                        self.register(plugin);
+                        loaded.push(Arc::new(plugin) as Arc<dyn ScanPlugin>);
                     }
                 } else if std::env::consts::FAMILY == "unix" {
                     // Files without extension on unix might be executables
@@ -240,9 +258,13 @@ impl PluginRegistry {
                         .to_string();
                     tracing::info!(file = %path.display(), "Loading external gRPC plugin");
                     let plugin = crate::grpc_plugin::GrpcPluginBridge::new(file_name, path);
-                    self.register(plugin);
+                    loaded.push(Arc::new(plugin) as Arc<dyn ScanPlugin>);
                 }
             }
+        }
+        
+        if let Ok(mut ext) = self.external_plugins.write() {
+            *ext = loaded;
         }
         Ok(())
     }
@@ -265,24 +287,11 @@ impl PluginRegistry {
             notify::recommended_watcher(move |res: Result<notify::Event, notify::Error>| {
                 if let Ok(event) = res {
                     match event.kind {
-                        EventKind::Create(_) | EventKind::Modify(_) | EventKind::Remove(_) => {
+                        notify::EventKind::Create(_) | notify::EventKind::Modify(_) | notify::EventKind::Remove(_) => {
                             tracing::info!(
-                                "Detected changes in {:?}, hot-reloading plugins...",
+                                "Detected changes in {:?}, hot-reloading external plugins...",
                                 watch_dir
                             );
-
-                            // We must re-register core plugins, but our architecture currently mixes core & external plugins in the same Vec.
-                            // For a pure enterprise V3 setup, we ideally separate them or we just reload everything.
-                            // Since this is a CLI scan, we will just reload external plugins by removing them.
-                            // Wait, to safely remove only external plugins, we'd need to track which are external.
-                            // As a simple robust fallback: we just load newly added .vpa/.wasm files.
-                            // If it's a modify, `register` will append a new instance.
-                            // For a true enterprise hot-reload, we'd clear the Vec and run the full setup, or keep core plugins separate.
-                            // Here we just re-run load_external_plugins. It will append to the end.
-                            // To avoid duplicates, we can clear the whole list, but we'd lose core plugins.
-                            // Let's implement a safe 'reload_external' by filtering out plugins not loaded from the watch dir?
-                            // For now, we will just call load_external_plugins and let it append, and rely on `PluginRegistry` not caring about duplicates for now.
-                            // In a real V3, we'd have `core_plugins` and `external_plugins`.
 
                             if let Err(e) = registry.load_external_plugins(&watch_dir) {
                                 tracing::error!("Hot-reload failed: {}", e);
@@ -305,7 +314,10 @@ impl PluginRegistry {
     #[tracing::instrument(skip(self))]
     /// Documentation for this item.
     pub async fn init_all(&self) -> Result<(), ScannerError> {
-        let plugins = self.plugins.lock().clone();
+        let mut plugins = self.core_plugins.lock().clone();
+        if let Ok(ext) = self.external_plugins.read() {
+            plugins.extend(ext.iter().cloned());
+        }
         for plugin in &plugins {
             plugin.init().await.map_err(|e| {
                 tracing::error!(plugin = plugin.name(), error = %e, "plugin init failed");
@@ -318,7 +330,10 @@ impl PluginRegistry {
     /// Validate all applicable plugin configs for a template. Fail-fast.
     #[tracing::instrument(skip(self, template), fields(template_id = %template.id))]
     pub fn validate_template(&self, template: &VulnerabilityTemplate) -> Result<(), ScannerError> {
-        let plugins = self.plugins.lock().clone();
+        let mut plugins = self.core_plugins.lock().clone();
+        if let Ok(ext) = self.external_plugins.read() {
+            plugins.extend(ext.iter().cloned());
+        }
         for plugin in &plugins {
             if plugin.is_applicable(template) {
                 plugin.validate_config(template)?;
@@ -330,7 +345,10 @@ impl PluginRegistry {
     /// Shutdown all plugins gracefully.
     #[tracing::instrument(skip(self))]
     pub async fn shutdown_all(&self) {
-        let plugins = self.plugins.lock().clone();
+        let mut plugins = self.core_plugins.lock().clone();
+        if let Ok(ext) = self.external_plugins.read() {
+            plugins.extend(ext.iter().cloned());
+        }
         for plugin in &plugins {
             if let Err(e) = plugin.shutdown().await {
                 tracing::warn!(plugin = plugin.name(), error = %e, "plugin shutdown error");
@@ -348,7 +366,10 @@ impl PluginRegistry {
         use crate::traits::PluginHealth;
         use std::time::Instant;
 
-        let plugins = self.plugins.lock().clone();
+        let mut plugins = self.core_plugins.lock().clone();
+        if let Ok(ext) = self.external_plugins.read() {
+            plugins.extend(ext.iter().cloned());
+        }
         let mut results = Vec::with_capacity(plugins.len());
         for plugin in &plugins {
             let start = Instant::now();
@@ -377,11 +398,13 @@ impl PluginRegistry {
 
     /// Documentation for this item.
     pub fn len(&self) -> usize {
-        self.plugins.lock().len()
+        let core = self.core_plugins.lock().len();
+        let ext = self.external_plugins.read().map(|e| e.len()).unwrap_or(0);
+        core + ext
     }
     /// Documentation for this item.
     pub fn is_empty(&self) -> bool {
-        self.plugins.lock().is_empty()
+        self.len() == 0
     }
 
     /// Execute all applicable plugins for a template against a target.
@@ -410,12 +433,13 @@ impl PluginRegistry {
         let variables = Arc::new(RwLock::new(VariableScope::new(initial_vars)));
 
         // Filter to applicable plugins
-        let applicable: Vec<_> = self
-            .plugins
-            .lock()
-            .iter()
+        let mut all_plugins = self.core_plugins.lock().clone();
+        if let Ok(ext) = self.external_plugins.read() {
+            all_plugins.extend(ext.iter().cloned());
+        }
+        let applicable: Vec<_> = all_plugins
+            .into_iter()
             .filter(|p| p.is_applicable(&template))
-            .cloned()
             .collect();
 
         // P4.4: Runtime plugin coverage validation — warn if template has sections
@@ -817,6 +841,10 @@ mod tests {
                         description: None,
                         solution: None,
                         extracted_data: None,
+                        evidence_request: None,
+                        evidence_response: None,
+                        tags: vec![],
+                        protocol: None,
                         metadata: Default::default(),
                     })
                     .await;

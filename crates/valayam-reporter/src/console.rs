@@ -149,6 +149,10 @@ mod tests {
             description: Some("SQL Injection detected".into()),
             solution: Some("Use prepared statements".into()),
             extracted_data: Some("admin' OR 1=1".into()),
+            evidence_request: None,
+            evidence_response: None,
+            tags: vec![],
+            protocol: None,
             metadata: Default::default(),
         }
     }
@@ -175,6 +179,10 @@ mod tests {
             description: None,
             solution: None,
             extracted_data: None,
+            evidence_request: None,
+            evidence_response: None,
+            tags: vec![],
+            protocol: None,
             metadata: Default::default(),
         };
 

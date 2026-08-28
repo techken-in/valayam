@@ -35,12 +35,16 @@ pub async fn execute(
             let records_text = records.join("\n");
 
             if rule.matchers.is_empty() {
-                findings.push(FindingOwned::from_template_and_info(
+                let mut finding = FindingOwned::from_template_and_info(
                     template_id,
                     template_meta,
                     domain.clone(),
                     format!("{} records: {}", rule.query_type, records_text),
-                ));
+                );
+                finding.protocol = Some("dns".to_string());
+                finding.evidence_request = Some(format!("{} {}", rule.query_type, domain));
+                finding.evidence_response = Some(records_text.clone());
+                findings.push(finding);
             } else {
                 for matcher in &rule.matchers {
                     if matcher.r#type == "regex" {
@@ -50,7 +54,7 @@ pub async fn execute(
                             };
                             if re.is_match(&records_text) {
                                 tracing::debug!(target = %domain, pattern = %pattern, "Vulnerability DNS match found");
-                                findings.push(FindingOwned::from_template_and_info(
+                                let mut finding = FindingOwned::from_template_and_info(
                                     template_id,
                                     template_meta,
                                     domain.clone(),
@@ -58,7 +62,11 @@ pub async fn execute(
                                         "DNS {} matched '{}': {}",
                                         rule.query_type, pattern, records_text
                                     ),
-                                ));
+                                );
+                                finding.protocol = Some("dns".to_string());
+                                finding.evidence_request = Some(format!("{} {}", rule.query_type, domain));
+                                finding.evidence_response = Some(records_text.clone());
+                                findings.push(finding);
                             }
                         }
                     }
@@ -69,7 +77,7 @@ pub async fn execute(
         // 2. Subdomain Takeover Probing
         let takeovers = dns::check_subdomain_takeover(&domain).await;
         for takeover in takeovers {
-            findings.push(FindingOwned::from_template_and_info(
+            let mut finding = FindingOwned::from_template_and_info(
                 template_id,
                 template_meta,
                 domain.clone(),
@@ -77,7 +85,11 @@ pub async fn execute(
                     "Subdomain Takeover vulnerability ({}) - CNAME {} points to unclaimed service {} ({}). Remediation: {}",
                     takeover.confidence, takeover.cname, takeover.service, takeover.target, takeover.remediation
                 ),
-            ));
+            );
+            finding.protocol = Some("dns".to_string());
+            finding.evidence_request = Some(format!("CNAME {}", domain));
+            finding.evidence_response = Some(format!("{} -> {}", takeover.cname, takeover.service));
+            findings.push(finding);
         }
 
         // 3. DNS Rebinding Detection (Heuristic)
@@ -89,12 +101,16 @@ pub async fn execute(
                     if let Ok(second_a) = dns::resolve(&domain, "A").await {
                         if let Some(second_ip) = second_a.first() {
                             if is_private_ip(second_ip) {
-                                findings.push(FindingOwned::from_template_and_info(
+                                let mut finding = FindingOwned::from_template_and_info(
                                     template_id,
                                     template_meta,
                                     domain.clone(),
                                     format!("DNS Rebinding vulnerability detected: IP shifted from {} to private IP {}", first_ip, second_ip),
-                                ));
+                                );
+                                finding.protocol = Some("dns".to_string());
+                                finding.evidence_request = Some(format!("A {} (Rebinding Check)", domain));
+                                finding.evidence_response = Some(format!("first: {}\nsecond: {}", first_ip, second_ip));
+                                findings.push(finding);
                             }
                         }
                     }
@@ -105,7 +121,7 @@ pub async fn execute(
         // 4. AXFR Zone Transfer Probes
         let axfr_records = dns::attempt_axfr(&domain, None).await;
         if !axfr_records.is_empty() {
-            findings.push(FindingOwned::from_template_and_info(
+            let mut finding = FindingOwned::from_template_and_info(
                 template_id,
                 template_meta,
                 domain.clone(),
@@ -113,7 +129,11 @@ pub async fn execute(
                     "Zone transfer (AXFR) successful! Recovered {} records.",
                     axfr_records.len()
                 ),
-            ));
+            );
+            finding.protocol = Some("dns".to_string());
+            finding.evidence_request = Some(format!("AXFR {}", domain));
+            finding.evidence_response = Some(axfr_records.join("\n"));
+            findings.push(finding);
         }
     }
 

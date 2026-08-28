@@ -119,6 +119,10 @@ mod tests {
             description: None,
             solution: None,
             extracted_data: None,
+            evidence_request: None,
+            evidence_response: None,
+            tags: vec![],
+            protocol: None,
             metadata: Default::default(),
         }
     }

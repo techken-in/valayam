@@ -569,3 +569,69 @@ pub fn list_plugins() -> anyhow::Result<()> {
     }
     Ok(())
 }
+
+pub async fn search_plugins(query: &str) -> anyhow::Result<()> {
+    let url = "https://api.valayam.io/plugins/search";
+    println!("Searching Valayam Marketplace for '{}'...", query);
+    
+    let client = reqwest::Client::new();
+    let resp = client.get(url).query(&[("q", query)]).send().await?;
+    if !resp.status().is_success() {
+        anyhow::bail!("Failed to search marketplace (status: {})", resp.status());
+    }
+    
+    let results: serde_json::Value = resp.json().await?;
+    
+    println!("\nSearch Results:");
+    if let Some(arr) = results.as_array() {
+        if arr.is_empty() {
+            println!("No plugins found matching '{}'", query);
+        } else {
+            for item in arr {
+                let name = item["name"].as_str().unwrap_or("unknown");
+                let version = item["version"].as_str().unwrap_or("unknown");
+                let desc = item["description"].as_str().unwrap_or("");
+                println!("- {} (v{})", name, version);
+                if !desc.is_empty() {
+                    println!("  {}", desc);
+                }
+            }
+        }
+    } else {
+        println!("Invalid response format from marketplace API.");
+    }
+    Ok(())
+}
+
+pub async fn publish_plugin(file_path: &str) -> anyhow::Result<()> {
+    let path = Path::new(file_path);
+    if !path.exists() {
+        anyhow::bail!("Plugin file '{}' does not exist.", file_path);
+    }
+    
+    let api_key = std::env::var("VALAYAM_API_KEY").map_err(|_| {
+        anyhow::anyhow!("VALAYAM_API_KEY environment variable is required to publish plugins")
+    })?;
+
+    println!("Publishing '{}' to Valayam Marketplace...", file_path);
+    
+    let file_content = std::fs::read(path)?;
+    
+    let client = reqwest::Client::new();
+    let resp = client.post("https://api.valayam.io/plugins/publish")
+        .header("Authorization", format!("Bearer {}", api_key))
+        .header("Content-Type", "application/octet-stream")
+        .body(file_content)
+        .send()
+        .await?;
+        
+    if resp.status().is_success() {
+        println!("Successfully published plugin to Valayam Marketplace!");
+    } else {
+        let status = resp.status();
+        let err_text = resp.text().await.unwrap_or_default();
+        anyhow::bail!("Failed to publish plugin (status: {}). Error: {}", status, err_text);
+    }
+    
+    Ok(())
+}

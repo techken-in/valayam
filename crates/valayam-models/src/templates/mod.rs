@@ -61,3 +61,4 @@ pub mod tls_audit;
 pub mod ui_proxy;
 pub mod waf_bypass_verify;
 pub mod web3_audit;
+pub mod websocket;

@@ -281,12 +281,43 @@ pub async fn execute(
                     template_id,
                     full_url
                 );
-                findings.push(FindingOwned::from_template_and_info(
+                let mut finding = FindingOwned::from_template_and_info(
                     template_id,
                     template_meta,
                     target_url.to_string(),
                     full_url.clone(),
-                ));
+                );
+
+                finding.protocol = Some("http".to_string());
+                
+                let mut raw_req = format!("{} {}\n", req_rule.method, full_url);
+                if let Some(headers) = &resolved_headers {
+                    for (k, v) in headers {
+                        raw_req.push_str(&format!("{}: {}\n", k, v));
+                    }
+                }
+                if let Some(body) = &resolved_body {
+                    raw_req.push_str("\n");
+                    raw_req.push_str(body);
+                }
+                finding.evidence_request = Some(raw_req);
+
+                let evidence_body = String::from_utf8_lossy(&body_bytes);
+                let truncated_resp = if evidence_body.len() > 2048 {
+                    format!("{}... [truncated]", &evidence_body[..2048])
+                } else {
+                    evidence_body.into_owned()
+                };
+                
+                let mut raw_resp = format!("HTTP/1.1 {}\n", status);
+                for (k, v) in &resp_headers {
+                    raw_resp.push_str(&format!("{}: {}\n", k, v));
+                }
+                raw_resp.push_str("\n");
+                raw_resp.push_str(&truncated_resp);
+                finding.evidence_response = Some(raw_resp);
+
+                findings.push(finding);
             }
         } // End of URLs loop
     }

@@ -7,7 +7,16 @@ use extism::host_fn;
 use std::fs;
 use std::path::PathBuf;
 
-host_fn!(pub dns_resolve(user_data: (); domain: String) -> String {
+#[derive(Clone)]
+pub struct PluginCaps(pub std::collections::HashSet<crate::vpa::PluginCapability>);
+
+host_fn!(pub dns_resolve(user_data: PluginCaps; domain: String) -> String {
+    let caps = user_data.get()?;
+    let guard = caps.lock().unwrap();
+    if !guard.0.contains(&crate::vpa::PluginCapability::Dns) {
+        return Err(extism::Error::msg("PermissionDenied: Missing Dns capability"));
+    }
+    drop(guard);
     use std::net::ToSocketAddrs;
 
     let mut ips = Vec::new();
@@ -21,7 +30,13 @@ host_fn!(pub dns_resolve(user_data: (); domain: String) -> String {
     Ok(serde_json::to_string(&ips).unwrap_or_else(|_| "[]".to_string()))
 });
 
-host_fn!(pub kv_get(user_data: (); key: String) -> String {
+host_fn!(pub kv_get(user_data: PluginCaps; key: String) -> String {
+    let caps = user_data.get()?;
+    let guard = caps.lock().unwrap();
+    if !guard.0.contains(&crate::vpa::PluginCapability::Oob) {
+        return Err(extism::Error::msg("PermissionDenied: Missing Oob capability (required for KV)"));
+    }
+    drop(guard);
     let state_dir = PathBuf::from(".valayam-state");
     let file_path = state_dir.join(&key);
 
@@ -33,7 +48,13 @@ host_fn!(pub kv_get(user_data: (); key: String) -> String {
     Ok("".to_string())
 });
 
-host_fn!(pub kv_set(user_data: (); input: String) -> String {
+host_fn!(pub kv_set(user_data: PluginCaps; input: String) -> String {
+    let caps = user_data.get()?;
+    let guard = caps.lock().unwrap();
+    if !guard.0.contains(&crate::vpa::PluginCapability::Oob) {
+        return Err(extism::Error::msg("PermissionDenied: Missing Oob capability (required for KV)"));
+    }
+    drop(guard);
     let state_dir = PathBuf::from(".valayam-state");
     let _ = fs::create_dir_all(&state_dir);
 

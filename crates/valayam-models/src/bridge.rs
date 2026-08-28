@@ -26,9 +26,7 @@ pub fn scan_result_to_finding(res: ScanResult) -> FindingOwned {
     if let Some(sol) = res.solution {
         metadata.insert(META_SOLUTION.to_string(), sol);
     }
-    if !res.tags.is_empty() {
-        metadata.insert("::tags".to_string(), res.tags.join(","));
-    }
+
     FindingOwned {
         scan_id: uuid::Uuid::default(),
         template_id: res.template_id,
@@ -40,6 +38,10 @@ pub fn scan_result_to_finding(res: ScanResult) -> FindingOwned {
         description: None,
         solution: None,
         extracted_data: None,
+        evidence_request: None,
+        evidence_response: None,
+        tags: res.tags,
+        protocol: None,
         metadata,
     }
 }
@@ -53,7 +55,7 @@ pub fn finding_to_scan_result(finding: FindingOwned) -> ScanResult {
     let mut cvss_score: Option<f32> = None;
     let mut solution: Option<String> = None;
     let mut reference: Option<String> = None;
-    let mut tags: Vec<String> = Vec::new();
+    let tags = finding.tags;
 
     for (key, value) in &finding.metadata {
         match key.as_str() {
@@ -67,7 +69,7 @@ pub fn finding_to_scan_result(finding: FindingOwned) -> ScanResult {
                 reference = Some(value.clone());
             }
             "::tags" => {
-                tags = value.split(',').map(|s| s.to_string()).collect();
+                // Ignore, as finding.tags already has it
             }
             // Everything else is genuine compliance data
             other => {
@@ -109,6 +111,10 @@ mod tests {
             description: None,
             solution: Some("direct solution".into()),
             extracted_data: None,
+            evidence_request: None,
+            evidence_response: None,
+            tags: vec![],
+            protocol: None,
             metadata: [("::solution".into(), "metadata solution".into())].into(),
         };
 
@@ -129,6 +135,10 @@ mod tests {
             description: None,
             solution: None,
             extracted_data: None,
+            evidence_request: None,
+            evidence_response: None,
+            tags: vec![],
+            protocol: None,
             metadata: [("::cvss_score".into(), "5.5".into())].into(),
         };
 
@@ -148,6 +158,10 @@ mod tests {
             description: None,
             solution: None,
             extracted_data: None,
+            evidence_request: None,
+            evidence_response: None,
+            tags: vec![],
+            protocol: None,
             metadata: [
                 ("owasp".into(), "A3:2017".into()),
                 ("nist".into(), "SP-800-53".into()),
@@ -174,6 +188,10 @@ mod tests {
             description: None,
             solution: None,
             extracted_data: None,
+            evidence_request: None,
+            evidence_response: None,
+            tags: vec![],
+            protocol: None,
             metadata: [("::tags".into(), "xss,sql".into())].into(),
         };
 

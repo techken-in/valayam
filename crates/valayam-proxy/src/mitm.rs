@@ -248,6 +248,7 @@ async fn generate_template(uri: &str, method: &str, body: &str) -> std::io::Resu
         dom_redirect_audit: vec![],
         cors_audit: vec![],
         csp_audit: vec![],
+        websocket: vec![],
         waf_bypass_verify: vec![],
         header_scorecard: vec![],
         reputation_audit: vec![],

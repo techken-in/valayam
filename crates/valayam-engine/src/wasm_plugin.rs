@@ -51,15 +51,22 @@ pub struct WasmPluginBridge {
     name: String,
     wasm_path: PathBuf,
     config: PluginConfig,
+    capabilities: std::collections::HashSet<crate::vpa::PluginCapability>,
 }
 
 impl WasmPluginBridge {
     /// Documentation for this item.
-    pub fn new(name: impl Into<String>, wasm_path: PathBuf, config: PluginConfig) -> Self {
+    pub fn new(
+        name: impl Into<String>,
+        wasm_path: PathBuf,
+        config: PluginConfig,
+        capabilities: std::collections::HashSet<crate::vpa::PluginCapability>,
+    ) -> Self {
         Self {
             name: name.into(),
             wasm_path,
             config,
+            capabilities,
         }
     }
 
@@ -126,25 +133,29 @@ impl ScanPlugin for WasmPluginBridge {
     }
 
     async fn init(&self) -> Result<(), ScannerError> {
-        let f1 = extism::Function::new(
+        use crate::host_functions::PluginCaps;
+        
+        let caps = PluginCaps(self.capabilities.clone());
+
+        let f1 = extism::Function::new::<PluginCaps, _>(
             "dns_resolve",
             [extism::ValType::I64],
             [extism::ValType::I64],
-            extism::UserData::new(()),
+            extism::UserData::new(caps.clone()),
             crate::host_functions::dns_resolve,
         );
-        let f2 = extism::Function::new(
+        let f2 = extism::Function::new::<PluginCaps, _>(
             "kv_get",
             [extism::ValType::I64],
             [extism::ValType::I64],
-            extism::UserData::new(()),
+            extism::UserData::new(caps.clone()),
             crate::host_functions::kv_get,
         );
-        let f3 = extism::Function::new(
+        let f3 = extism::Function::new::<PluginCaps, _>(
             "kv_set",
             [extism::ValType::I64],
             [extism::ValType::I64],
-            extism::UserData::new(()),
+            extism::UserData::new(caps.clone()),
             crate::host_functions::kv_set,
         );
 
@@ -176,25 +187,28 @@ impl ScanPlugin for WasmPluginBridge {
             template_json, context_json
         );
 
-        let f1 = extism::Function::new(
+        use crate::host_functions::PluginCaps;
+        let caps = PluginCaps(self.capabilities.clone());
+
+        let f1 = extism::Function::new::<PluginCaps, _>(
             "dns_resolve",
             [extism::ValType::I64],
             [extism::ValType::I64],
-            extism::UserData::new(()),
+            extism::UserData::new(caps.clone()),
             crate::host_functions::dns_resolve,
         );
-        let f2 = extism::Function::new(
+        let f2 = extism::Function::new::<PluginCaps, _>(
             "kv_get",
             [extism::ValType::I64],
             [extism::ValType::I64],
-            extism::UserData::new(()),
+            extism::UserData::new(caps.clone()),
             crate::host_functions::kv_get,
         );
-        let f3 = extism::Function::new(
+        let f3 = extism::Function::new::<PluginCaps, _>(
             "kv_set",
             [extism::ValType::I64],
             [extism::ValType::I64],
-            extism::UserData::new(()),
+            extism::UserData::new(caps.clone()),
             crate::host_functions::kv_set,
         );
 
@@ -280,6 +294,10 @@ impl ScanPlugin for WasmPluginBridge {
                                         description: f.description,
                                         solution: f.solution,
                                         extracted_data: f.extracted_data,
+                                        evidence_request: None,
+                                        evidence_response: None,
+                                        tags: vec![],
+                                        protocol: None,
                                         metadata: f.metadata,
                                     };
                                     let _ = ctx.finding_tx.send(finding).await;

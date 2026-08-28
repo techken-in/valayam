@@ -4,23 +4,63 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use zip::ZipArchive;
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub enum PluginCapability {
+    Http,
+    Dns,
+    Network,
+    Oob,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
-/// Documentation for this item.
-pub struct PluginManifest {
-    /// Documentation for this item.
+pub struct PluginDependency {
     pub name: String,
-    /// Documentation for this item.
+    pub version_req: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PluginInput {
+    pub name: String,
+    #[serde(rename = "type")]
+    pub ty: String,
+    pub required: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PluginOutput {
+    pub name: String,
+    #[serde(rename = "type")]
+    pub ty: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PluginManifest {
+    pub name: String,
     pub version: String,
-    /// Documentation for this item.
     pub author: Option<String>,
-    /// Documentation for this item.
     pub runtime: String, // "grpc", "wasm"
-    /// Documentation for this item.
     pub language: String,
-    /// Documentation for this item.
     pub entrypoint: String,
-    /// Documentation for this item.
-    pub capabilities: Option<Vec<String>>,
+    
+    // v2 fields
+    #[serde(default = "default_api_version")]
+    pub api_version: String,
+    
+    #[serde(default)]
+    pub capabilities: Vec<PluginCapability>,
+    
+    #[serde(default)]
+    pub dependencies: Vec<PluginDependency>,
+    
+    #[serde(default)]
+    pub inputs: Vec<PluginInput>,
+    
+    #[serde(default)]
+    pub outputs: Vec<PluginOutput>,
+}
+
+fn default_api_version() -> String {
+    "1.0".to_string()
 }
 
 #[derive(Debug)]

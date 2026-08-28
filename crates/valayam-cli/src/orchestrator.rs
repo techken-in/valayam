@@ -283,6 +283,24 @@ pub async fn run_scan_with_job_id(
     // ── 1. Create bounded MPSC channel ──
     let (finding_tx, mut finding_rx) = tokio::sync::mpsc::channel::<FindingOwned>(1000);
 
+    let (tui_tx, tui_rx) = if args.tui {
+        let (tx, rx) = tokio::sync::mpsc::channel::<FindingOwned>(1000);
+        (Some(tx), Some(rx))
+    } else {
+        (None, None)
+    };
+
+    let tui_running = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(true));
+    let mut tui_handle = None;
+    if let Some(rx) = tui_rx {
+        let running_clone = tui_running.clone();
+        tui_handle = Some(tokio::spawn(async move {
+            if let Err(e) = crate::dashboard::ui::run_dashboard(rx, running_clone).await {
+                tracing::error!("Dashboard error: {}", e);
+            }
+        }));
+    }
+
     let state_rx_to_use = state_rx;
     let cancel_for_handler = cancel.clone();
 
@@ -297,16 +315,23 @@ pub async fn run_scan_with_job_id(
     });
 
     let mut actual_targets = targets.clone();
-    if let Some((pending, _completed)) = db.load_state(&state_id).unwrap_or(None) {
+    let mut completed_tasks_set = std::collections::HashSet::new();
+
+    if let Some(snapshot) = db.load_state(&state_id).unwrap_or(None) {
         spinner.suspend(|| {
             println!(
-                "{} Resuming scan from state ID: {}. Loaded {} pending targets.",
+                "{} Resuming scan from state ID: {}. Loaded {} pending tasks.",
                 "[+]".green().bold(),
                 state_id,
-                pending.len()
+                snapshot.pending_tasks.len()
             );
         });
-        actual_targets = pending;
+        actual_targets = snapshot.pending_tasks.iter().map(|(t, _)| t.clone()).collect();
+        actual_targets.sort();
+        actual_targets.dedup();
+        for (t, tmpl) in snapshot.completed_tasks {
+            completed_tasks_set.insert((t, tmpl));
+        }
     } else {
         spinner.suspend(|| {
             println!(
@@ -369,10 +394,24 @@ pub async fn run_scan_with_job_id(
     }
 
     let pending_for_shutdown = actual_targets.clone();
+    let template_files_for_shutdown = template_files.clone();
+    let completed_tasks_for_shutdown = completed_tasks_set.clone();
     tokio::spawn(async move {
         if tokio::signal::ctrl_c().await.is_ok() {
             tracing::warn!("received Ctrl+C, initiating graceful shutdown...");
-            let _ = db.save_state(&state_id, &pending_for_shutdown, &[]);
+            
+            let mut pending_tasks = Vec::new();
+            for target in &pending_for_shutdown {
+                for file_path in &template_files_for_shutdown {
+                    let task_key = (target.clone(), file_path.to_string_lossy().to_string());
+                    if !completed_tasks_for_shutdown.contains(&task_key) {
+                        pending_tasks.push(task_key);
+                    }
+                }
+            }
+            let completed_tasks: Vec<_> = completed_tasks_for_shutdown.into_iter().collect();
+
+            let _ = db.save_state(&state_id, &pending_tasks, &completed_tasks, 0, std::collections::HashMap::new());
             cancel_for_handler.cancel();
         }
     });
@@ -444,6 +483,11 @@ pub async fn run_scan_with_job_id(
 
         // Core protocols
         reg.register(HttpScanPlugin::new(http_client.clone()));
+        reg.register(valayam_core::core::plugins::WebsocketScanPlugin::new());
+        reg.register(valayam_core::core::plugins::GraphqlAuditPlugin::new(http_client.clone()));
+        reg.register(valayam_core::core::plugins::GrpcAuditPlugin::new(http_client.clone()));
+        reg.register(valayam_core::core::plugins::AuthLogicPlugin::new(http_client.clone()));
+        reg.register(valayam_core::core::plugins::SubdomainTakeoverPlugin::new());
         // Scripting and Fuzzer moved to Wasm
         // Cloud & Extended moved to Wasm
         // Batch 8 (Threat Audit) moved to Wasm
@@ -575,6 +619,10 @@ pub async fn run_scan_with_job_id(
                 continue;
             }
 
+            if let Some(ref tx) = tui_tx {
+                let _ = tx.send(finding.clone()).await;
+            }
+
             // Track severity counts
             {
                 let mut counts = severity_for_consumer.lock().await;
@@ -613,7 +661,10 @@ pub async fn run_scan_with_job_id(
     let mut tasks = Vec::new();
     for target in &actual_targets {
         for file_path in &template_files {
-            tasks.push((target.clone(), file_path.clone()));
+            let task_key = (target.clone(), file_path.to_string_lossy().to_string());
+            if !completed_tasks_set.contains(&task_key) {
+                tasks.push((target.clone(), file_path.clone()));
+            }
         }
     }
 
@@ -697,6 +748,11 @@ pub async fn run_scan_with_job_id(
 
     let _findings_count = consumer_handle.await.unwrap_or(0);
     spinner.finish_and_clear();
+
+    tui_running.store(false, std::sync::atomic::Ordering::SeqCst);
+    if let Some(handle) = tui_handle {
+        let _ = handle.await;
+    }
 
     // Print the rich summary table
     let scan_duration = scan_start.elapsed();

@@ -49,6 +49,7 @@ use crate::templates::tls_audit::TlsAuditTemplate;
 use crate::templates::ui_proxy::UiProxyTemplate;
 use crate::templates::waf_bypass_verify::WafBypassVerifyTemplate;
 use crate::templates::web3_audit::Web3AuditTemplate;
+use crate::templates::websocket::WebsocketTemplate;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
@@ -148,6 +149,8 @@ pub struct VulnerabilityTemplate {
     #[serde(default)]
     pub cicd_audit: Vec<CicdAuditTemplate>,
     #[serde(default)]
+    pub websocket: Vec<WebsocketTemplate>,
+    #[serde(default)]
     pub dependency_audit: Vec<DependencyAuditTemplate>,
     #[serde(default)]
     pub easm: Vec<EasmTemplate>,
@@ -245,6 +248,7 @@ impl VulnerabilityTemplate {
             schema_drift: vec![],
             pii_leak_audit: vec![],
             cicd_audit: vec![],
+            websocket: vec![],
             dependency_audit: vec![],
             easm: vec![],
             web3_audit: vec![],

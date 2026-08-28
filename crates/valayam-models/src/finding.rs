@@ -77,6 +77,14 @@ pub struct FindingOwned {
     pub solution: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub extracted_data: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub evidence_request: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub evidence_response: Option<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub tags: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub protocol: Option<String>,
     #[serde(default, skip_serializing_if = "HashMap::is_empty")]
     pub metadata: HashMap<String, String>,
 }
@@ -105,6 +113,8 @@ impl FindingOwned {
         let severity = Severity::from_str(severity_str).unwrap_or(Severity::Unknown);
 
         let mut meta = std::collections::HashMap::new();
+        let mut tags = Vec::new();
+        let mut protocol = None;
         for (key, value) in metadata {
             match key.as_str() {
                 "template_id" | "template_name" | "template_severity" => {
@@ -120,7 +130,10 @@ impl FindingOwned {
                     meta.insert("::reference".to_string(), value);
                 }
                 "tags" => {
-                    meta.insert("::tags".to_string(), value);
+                    tags = value.split(',').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect();
+                }
+                "protocol" => {
+                    protocol = Some(value);
                 }
                 other => {
                     meta.insert(other.to_string(), value);
@@ -138,6 +151,10 @@ impl FindingOwned {
             description: None,
             solution: None,
             extracted_data: None,
+            evidence_request: None,
+            evidence_response: None,
+            tags,
+            protocol,
             metadata: meta,
         }
     }
@@ -151,6 +168,12 @@ impl FindingOwned {
         target: impl Into<String>,
         matched_at: impl Into<String>,
     ) -> Self {
+        let tags = template_meta
+            .tags()
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+
         Self {
             scan_id: uuid::Uuid::default(),
             template_id: template_id.into(),
@@ -162,6 +185,10 @@ impl FindingOwned {
             description: template_meta.description().map(|s| s.to_string()),
             solution: None,
             extracted_data: None,
+            evidence_request: None,
+            evidence_response: None,
+            tags,
+            protocol: None,
             metadata: template_meta.compliance().clone(),
         }
     }

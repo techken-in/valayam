@@ -1,10 +1,23 @@
 use clap::Parser;
 
+fn cli_styles() -> clap::builder::Styles {
+    use clap::builder::styling::{AnsiColor, Effects, Styles};
+    Styles::styled()
+        .header(AnsiColor::Cyan.on_default() | Effects::BOLD)
+        .usage(AnsiColor::Green.on_default() | Effects::BOLD)
+        .literal(AnsiColor::Yellow.on_default() | Effects::BOLD)
+        .placeholder(AnsiColor::Blue.on_default())
+        .error(AnsiColor::Red.on_default() | Effects::BOLD)
+        .valid(AnsiColor::Green.on_default() | Effects::BOLD)
+        .invalid(AnsiColor::Yellow.on_default() | Effects::BOLD)
+}
+
 #[derive(Parser, Debug, Clone)]
 #[command(
     name = "valayam",
     version = "0.1.0",
     about = "Modern Stealth Scanner Core\n\nA high-performance, template-driven scanner supporting HTTP requests,\nTCP port scanning, and embedded Rhai scripting for multi-step workflows.",
+    styles = cli_styles(),
     after_help = "\x1b[1;36mEXAMPLES:\x1b[0m
   \x1b[1mBasic HTTP template scan:\x1b[0m
     valayam -u https://target.com -t ./templates_repo/demo-template.yaml
@@ -155,6 +168,12 @@ pub struct Args {
 
     #[arg(
         long,
+        help = "Launch the interactive Ratatui dashboard to view findings in real-time"
+    )]
+    pub tui: bool,
+
+    #[arg(
+        long,
         help = "Allow scanning internal/private IP ranges (disabled by default for SSRF protection)"
     )]
     pub allow_internal: bool,
@@ -219,6 +238,15 @@ pub enum Commands {
         #[command(subcommand)]
         action: TemplateCommands,
     },
+    /// Compare two scan JSON output files to find new, resolved, or recurring vulnerabilities
+    Diff {
+        /// The baseline JSON output file from an older scan
+        #[arg(long)]
+        baseline: String,
+        /// The current JSON output file from a newer scan
+        #[arg(long)]
+        current: String,
+    },
 }
 
 #[derive(clap::Subcommand, Debug, Clone)]
@@ -273,6 +301,16 @@ pub enum PluginCommands {
         /// Optional signature to attach to the OCI manifest
         #[arg(long)]
         signature: Option<String>,
+    },
+    /// Search for plugins on the Valayam Marketplace
+    Search {
+        /// The search query
+        query: String,
+    },
+    /// Publish a plugin to the Valayam Marketplace
+    Publish {
+        /// The path to the packaged .vpa plugin file
+        file: String,
     },
     /// Uninstall a plugin
     Uninstall {

@@ -431,7 +431,7 @@ pub async fn execute(
                     template_meta.template_severity().to_string(),
                 );
                 meta.insert("tags".to_string(), format!("schema-drift,{}", tag2));
-                FindingOwned::from_template(
+                let mut finding = FindingOwned::from_template(
                     host.clone(),
                     format!(
                         "Schema drift detected (scan #{}) — {} finding(s):\n{}",
@@ -440,7 +440,10 @@ pub async fn execute(
                         findings.join("\n"),
                     ),
                     meta,
-                )
+                );
+                finding.protocol = Some("http".to_string());
+                finding.evidence_response = Some(findings.join("\n"));
+                finding
             });
         } else {
             debug!(

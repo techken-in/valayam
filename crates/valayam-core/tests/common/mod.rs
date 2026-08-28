@@ -54,6 +54,10 @@ pub fn sample_finding() -> FindingOwned {
         description: Some("vulnerability found".into()),
         solution: Some("apply fix".into()),
         extracted_data: None,
+        evidence_request: None,
+        evidence_response: None,
+        tags: vec![],
+        protocol: None,
         metadata: Default::default(),
     }
 }
