@@ -12,15 +12,40 @@ jobs:
     strategy:
       matrix:
         include:
+          # Linux x86_64 (musl — fully static binary)
           - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
+            target: x86_64-unknown-linux-musl
             binary_name: valayam
+            archive_ext: tar.gz
+            apt_extra: musl-tools
+
+          # Linux aarch64 (musl — fully static binary, cross-compiled)
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-musl
+            binary_name: valayam
+            archive_ext: tar.gz
+            apt_extra: gcc-aarch64-linux-gnu musl-tools
+
+          # macOS Intel
           - os: macos-latest
             target: x86_64-apple-darwin
             binary_name: valayam
+            archive_ext: tar.gz
+            apt_extra: ""
+
+          # macOS Apple Silicon
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            binary_name: valayam
+            archive_ext: tar.gz
+            apt_extra: ""
+
+          # Windows x86_64
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             binary_name: valayam.exe
+            archive_ext: zip
+            apt_extra: ""
 
     steps:
       - uses: actions/checkout@v4
@@ -30,9 +55,22 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
-      - name: Install dependencies (Linux)
-        if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libssl-dev pkg-config
+      - name: Install Linux cross-compilation dependencies
+        if: runner.os == 'Linux' && matrix.apt_extra != ''
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ${{ matrix.apt_extra }}
+
+      - name: Configure cross-compilation for aarch64-musl
+        if: matrix.target == 'aarch64-unknown-linux-musl'
+        run: |
+          echo "[target.aarch64-unknown-linux-musl]" >> ~/.cargo/config.toml
+          echo 'linker = "aarch64-linux-gnu-gcc"' >> ~/.cargo/config.toml
+
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
 
       - name: Build Binary
         run: cargo build --release --target ${{ matrix.target }} -p valayam-cli
@@ -44,7 +82,7 @@ jobs:
           mkdir -p release-archive
           cp target/${{ matrix.target }}/release/${{ matrix.binary_name }} release-archive/
           cd release-archive
-          if [ "${{ runner.os }}" = "Windows" ]; then
+          if [ "${{ matrix.archive_ext }}" = "zip" ]; then
             tar.exe -a -c -f valayam-${{ matrix.target }}.zip ${{ matrix.binary_name }}
             echo "archive_name=valayam-${{ matrix.target }}.zip" >> $GITHUB_OUTPUT
           else
@@ -53,8 +91,9 @@ jobs:
           fi
 
       - name: Upload Release Asset
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: release-archive/${{ steps.archive.outputs.archive_name }}
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -27,12 +27,12 @@ members = [
     "crates/valayam-api",
     "crates/valayam-config",
     "crates/valayam-mcp",
-    "crates/valayam-agent", "crates/valayam-tests", "crates/valayam-diff", "crates/valayam-plugin-test",
+    "crates/valayam-agent",
+    "crates/valayam-tests",
+    "crates/valayam-diff",
+    "crates/valayam-plugin-test",
 ]
-exclude = [
-    "crates/valayam-ebpf-programs",
-    "plugins-wasm/*",
-]
+exclude = ["crates/valayam-ebpf-programs", "plugins-wasm/*"]
 resolver = "2"
 
 [workspace.package]
@@ -55,7 +55,11 @@ lazy_static = "1.4"
 tokio = { version = "1.38", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
-reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json", "blocking", "http3"] }
+reqwest = { version = "0.12", default-features = false, features = [
+    "rustls-tls",
+    "json",
+    "blocking",
+] }
 rhai = { version = "1.25", features = ["sync", "serde"] }
 regex = "1.10"
 clap = { version = "4.5", features = ["derive", "env"] }
@@ -99,10 +103,10 @@ parking_lot = "0.12"
 
 [profile.release]
 incremental = false
-strip = true      # Automatically strip debug symbols from the binary
-opt-level = "z"   # Optimize for size rather than speed
-lto = true        # Link Time Optimization (removes dead code across dependencies)
-codegen-units = 1 # Better optimizations at the cost of slower compile times
+strip = true        # Automatically strip debug symbols from the binary
+opt-level = "z"     # Optimize for size rather than speed
+lto = true          # Link Time Optimization (removes dead code across dependencies)
+codegen-units = 1   # Better optimizations at the cost of slower compile times
 
 [profile.test]
 incremental = false
