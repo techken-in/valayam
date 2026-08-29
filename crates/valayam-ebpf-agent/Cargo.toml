@@ -18,5 +18,6 @@ tokio-stream = "0.1"
 [target.'cfg(target_os = "linux")'.dependencies]
 aya = { version = "0.12", features = ["async_tokio"] }
 aya-log = "0.2"
+valayam-ebpf-agent-common = { path = "valayam-ebpf-agent-common", features = ["user"] }
 
 [build-dependencies]

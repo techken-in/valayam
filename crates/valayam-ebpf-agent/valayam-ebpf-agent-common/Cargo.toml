@@ -1,0 +1,11 @@
+[package]
+name = "valayam-ebpf-agent-common"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+aya-ebpf = { version = "0.1.0", optional = true }
+
+[features]
+user = []
+bpf = ["aya-ebpf"]

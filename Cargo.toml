@@ -1,9 +1,10 @@
 [workspace]
 members = [
+    "crates/valayam-ebpf-agent/valayam-ebpf-agent-common",
     "crates/valayam-core",
     "crates/valayam-cli",
-    "crates/valayam-plugin-grpc-example",
-    "crates/valayam-plugin-wasm-example",
+    
+    
     "crates/valayam-engine",
     "crates/valayam-models",
     "crates/valayam-error",
@@ -23,16 +24,17 @@ members = [
     "crates/valayam-proto",
     "crates/valayam-ebpf-agent",
     "crates/valayam-plugin-sdk",
-    "plugins-wasm/cors-audit",
+    
     "crates/valayam-api",
     "crates/valayam-config",
     "crates/valayam-mcp",
     "crates/valayam-agent",
     "crates/valayam-tests",
     "crates/valayam-diff",
-    "crates/valayam-plugin-test",
+    
 ]
-exclude = ["crates/valayam-ebpf-programs", "plugins-wasm/*"]
+exclude = [
+    "crates/valayam-ebpf-agent/valayam-ebpf-agent-ebpf","crates/valayam-ebpf-programs", "plugins-wasm/*"]
 resolver = "2"
 
 [workspace.package]
