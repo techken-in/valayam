@@ -24,3 +24,4 @@ sha2.workspace = true
 tracing-subscriber = "0.3.23"
 valayam-engine.workspace = true
 hex.workspace = true
+rand = "0.8"

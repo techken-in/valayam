@@ -1057,6 +1057,7 @@ mod tests {
                 severity: "medium".to_string(),
                 author: None,
                 description: None,
+                category: None,
                 tags: vec![],
                 compliance: Default::default(),
             },

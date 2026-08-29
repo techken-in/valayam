@@ -657,6 +657,9 @@ pub async fn run_scan_with_job_id(
     if let Some(rx) = state_rx_to_use {
         executor = executor.with_state_rx(rx);
     }
+    
+    // Globally bound concurrent execution in the core engine
+    executor = executor.with_concurrency_limit(args.concurrency);
 
     let mut tasks = Vec::new();
     for target in &actual_targets {
@@ -675,6 +678,7 @@ pub async fn run_scan_with_job_id(
         let exec = executor.clone();
         let grpc_client_clone = grpc_client_arc.clone();
         let finding_tx_clone = finding_tx.clone();
+        let desired_category = args.testing_category.clone();
         async move {
             let path_str = file_path_clone.to_string_lossy().to_string();
 
@@ -710,7 +714,19 @@ pub async fn run_scan_with_job_id(
                     }
                 } else {
                     let template = match VulnerabilityTemplate::load(&file_path_clone) {
-                        Ok(t) => Arc::new(t),
+                        Ok(t) => {
+                            if let Some(ref desired_cat) = desired_category {
+                                let matches = match &t.info.category {
+                                    Some(cat) => cat.to_string() == *desired_cat || format!("{:?}", cat).to_lowercase() == desired_cat.to_lowercase(),
+                                    None => false,
+                                };
+                                if !matches {
+                                    tracing::trace!("Skipping template {} (does not match testing category {})", path_str, desired_cat);
+                                    return;
+                                }
+                            }
+                            Arc::new(t)
+                        }
                         Err(e) => {
                             tracing::error!("Failed to load Native template {}: {}", path_str, e);
                             return;

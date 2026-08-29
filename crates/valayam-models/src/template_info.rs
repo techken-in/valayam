@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::Debug;
 
+use crate::testing_category::TestingCategory;
+
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct TemplateInfo {
     pub name: String,
@@ -12,6 +14,9 @@ pub struct TemplateInfo {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub category: Option<TestingCategory>,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<String>,
@@ -32,6 +37,7 @@ pub trait TemplateMetadata: Debug + Sync + Send {
     fn author(&self) -> Option<&str>;
     fn tags(&self) -> &[String];
     fn compliance(&self) -> &HashMap<String, String>;
+    fn category(&self) -> Option<&TestingCategory>;
 }
 
 impl TemplateMetadata for TemplateInfo {
@@ -52,5 +58,8 @@ impl TemplateMetadata for TemplateInfo {
     }
     fn compliance(&self) -> &HashMap<String, String> {
         &self.compliance
+    }
+    fn category(&self) -> Option<&TestingCategory> {
+        self.category.as_ref()
     }
 }

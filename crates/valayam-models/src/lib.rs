@@ -10,7 +10,9 @@ pub mod finding;
 pub mod result;
 pub mod template_info;
 pub mod templates;
+pub mod testing_category;
 
 pub use finding::{FindingOwned, PluginHealth, PluginMetrics, PluginOutcomeKind};
 pub use result::ScanResult;
 pub use template_info::{TemplateInfo, TemplateMetadata};
+pub use testing_category::TestingCategory;

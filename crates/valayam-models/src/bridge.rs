@@ -55,7 +55,7 @@ pub fn finding_to_scan_result(finding: FindingOwned) -> ScanResult {
     let mut cvss_score: Option<f32> = None;
     let mut solution: Option<String> = None;
     let mut reference: Option<String> = None;
-    let tags = finding.tags;
+    let mut tags = finding.tags;
 
     for (key, value) in &finding.metadata {
         match key.as_str() {
@@ -69,7 +69,12 @@ pub fn finding_to_scan_result(finding: FindingOwned) -> ScanResult {
                 reference = Some(value.clone());
             }
             "::tags" => {
-                // Ignore, as finding.tags already has it
+                for tag in value.split(',') {
+                    let t = tag.trim().to_string();
+                    if !t.is_empty() && !tags.contains(&t) {
+                        tags.push(t);
+                    }
+                }
             }
             // Everything else is genuine compliance data
             other => {

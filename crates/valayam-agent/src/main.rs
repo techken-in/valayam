@@ -5,6 +5,7 @@ use std::time::{Duration, Instant};
 use tokio::time::sleep;
 use tokio_util::sync::CancellationToken;
 use valayam_config::agent::*;
+use rand::Rng;
 
 /// Minimum backoff between polls (when server returns 204)
 const MIN_BACKOFF_SECS: u64 = 1;
@@ -99,12 +100,14 @@ async fn main() -> anyhow::Result<()> {
                         }
                     }
                     Ok(None) => {
-                        sleep(Duration::from_secs(backoff_secs)).await;
+                        let jitter = rand::thread_rng().gen_range(0..=3);
+                        sleep(Duration::from_secs(backoff_secs + jitter)).await;
                         backoff_secs = (backoff_secs * 2).min(MAX_BACKOFF_SECS);
                     }
                     Err(e) => {
                         tracing::error!("Poll failed: {} (backoff {}s)", e, backoff_secs);
-                        sleep(Duration::from_secs(backoff_secs)).await;
+                        let jitter = rand::thread_rng().gen_range(0..=3);
+                        sleep(Duration::from_secs(backoff_secs + jitter)).await;
                         backoff_secs = (backoff_secs * 2).min(MAX_BACKOFF_SECS);
                     }
                 }
@@ -215,7 +218,9 @@ async fn execute_and_report(
         plugin_memory_limit: 128,
         plugin_timeout: 30,
         plugin_allow_host: vec![],
+        tui: false,
         command: None,
+        testing_category: None,
     };
 
     let http_client = valayam_cli::setup::init_http_client(&None, false, false)

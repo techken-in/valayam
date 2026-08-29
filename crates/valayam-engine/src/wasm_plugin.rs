@@ -33,7 +33,7 @@ pub struct PluginConfig {
 impl Default for PluginConfig {
     fn default() -> Self {
         Self {
-            memory_max_pages: 2048,               // 128 MB
+            memory_max_pages: 50,                 // 3.2 MB strict limit
             timeout_ms: 30000,                    // 30 sec
             allowed_hosts: vec!["*".to_string()], // allow all hosts by default for security scanner plugins
         }

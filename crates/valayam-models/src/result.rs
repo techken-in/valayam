@@ -137,6 +137,7 @@ mod tests {
             severity: "high".into(),
             author: None,
             description: Some("Test for SQL injection".into()),
+            category: None,
             tags: vec![],
             compliance: [("owasp".into(), "A1:2017".into())].into(),
         };

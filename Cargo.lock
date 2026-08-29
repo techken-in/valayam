@@ -7758,6 +7758,7 @@ dependencies = [
  "colored",
  "hex",
  "hmac 0.12.1",
+ "rand 0.8.7",
  "reqwest",
  "serde",
  "serde_json",

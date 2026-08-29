@@ -215,6 +215,7 @@ async fn generate_template(uri: &str, method: &str, body: &str) -> std::io::Resu
             name: format!("Auto-generated MITM template for {}", uri),
             severity: "Info".to_string(),
             description: Some("Automatically captured via proxy".into()),
+            category: None,
             compliance: Default::default(),
             author: None,
             tags: vec![],

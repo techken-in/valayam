@@ -6,6 +6,7 @@ pub struct GrpcAuditTemplate {
     pub service: Option<String>,
     pub method: Option<String>,
     pub reflection: bool,
+    pub payload: Option<String>,
 }
 
 #[cfg(test)]
@@ -36,10 +37,12 @@ mod tests {
             service: Some("TestService".into()),
             method: None,
             reflection: true,
+            payload: Some("base64payload".into()),
         };
         let json = serde_json::to_string(&tmpl).unwrap();
         let back: GrpcAuditTemplate = serde_json::from_str(&json).unwrap();
         assert_eq!(back.target, "localhost:50051");
         assert!(back.reflection);
+        assert_eq!(back.payload.unwrap(), "base64payload");
     }
 }

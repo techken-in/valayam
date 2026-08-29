@@ -1,10 +1,13 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct GraphqlAuditTemplate {
     pub target: String,
     pub introspection: bool,
     pub mutate: bool,
+    pub query: Option<String>,
+    pub variables: Option<HashMap<String, String>>,
 }
 
 #[cfg(test)]
@@ -33,10 +36,13 @@ mod tests {
             target: "https://graphql.com".into(),
             introspection: true,
             mutate: true,
+            query: Some("{ me { id } }".into()),
+            variables: None,
         };
         let json = serde_json::to_string(&tmpl).unwrap();
         let back: GraphqlAuditTemplate = serde_json::from_str(&json).unwrap();
         assert_eq!(back.target, "https://graphql.com");
         assert!(back.introspection);
+        assert_eq!(back.query.unwrap(), "{ me { id } }");
     }
 }

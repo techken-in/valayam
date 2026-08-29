@@ -190,6 +190,9 @@ impl TemplateMetadata for VulnerabilityTemplate {
     fn compliance(&self) -> &std::collections::HashMap<String, String> {
         &self.info.compliance
     }
+    fn category(&self) -> Option<&crate::testing_category::TestingCategory> {
+        self.info.category.as_ref()
+    }
 }
 
 impl VulnerabilityTemplate {
@@ -201,6 +204,7 @@ impl VulnerabilityTemplate {
                 severity: "info".into(),
                 author: None,
                 description: None,
+                category: None,
                 tags: vec![],
                 compliance: Default::default(),
             },

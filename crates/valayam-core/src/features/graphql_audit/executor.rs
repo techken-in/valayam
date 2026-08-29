@@ -48,6 +48,39 @@ pub async fn execute(
                 }
             }
         }
+        
+        if let Some(query) = &section.query {
+            let payload = serde_json::json!({
+                "query": query,
+                "variables": section.variables.as_ref().unwrap_or(&HashMap::new()),
+            });
+            
+            let mut headers = HashMap::new();
+            headers.insert("Content-Type".to_string(), "application/json".to_string());
+            
+            let payload_str = payload.to_string();
+            
+            if let Ok(resp) = client.send_request("POST", &section.target, Some(&headers), Some(&payload_str), Some(true), None).await {
+                if let Ok(body) = resp.text().await {
+                    let mut f = FindingOwned::from_template_and_info(
+                        template_id,
+                        info,
+                        target.to_string(),
+                        section.target.clone(),
+                    );
+                    f.protocol = Some("graphql".to_string());
+                    f.evidence_request = Some(payload_str.clone());
+                    
+                    let evidence_body = if body.len() > 2048 {
+                        format!("{}... [truncated]", &body[..2048])
+                    } else {
+                        body.clone()
+                    };
+                    f.evidence_response = Some(evidence_body);
+                    findings.push(f);
+                }
+            }
+        }
     }
 
     findings

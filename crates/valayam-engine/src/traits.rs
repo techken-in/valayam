@@ -499,6 +499,7 @@ mod tests {
                     severity: "info".into(),
                     author: None,
                     description: Some("desc".into()),
+                    category: None,
                     tags: vec![],
                     compliance: Default::default(),
                 },

@@ -760,10 +760,11 @@ mod tests {
         VulnerabilityTemplate {
             id: "test".to_string(),
             info: valayam_models::templates::schema::TemplateInfo {
-                name: "Test".to_string(),
-                severity: "Info".to_string(),
+                name: "Test Subdomain Takeover".into(),
+                severity: "High".into(),
                 author: None,
                 description: None,
+                category: None,
                 tags: vec![],
                 compliance: Default::default(),
             },

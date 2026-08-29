@@ -35,9 +35,8 @@ pub async fn execute(
 
     let resolver = TokioAsyncResolver::tokio(config, opts);
 
-    if let Ok(response) = resolver.lookup_ip(&target_domain).await {
-        // Just checking if resolution succeeds and looking at CNAMEs is one approach.
-        // For DNS over HTTPS/TLS subdomain takeover, we might look for vulnerable CNAMEs.
+    if let Ok(_response) = resolver.lookup_ip(&target_domain).await {
+        // IP resolution check — used to confirm host resolves before CNAME takeover analysis.
     }
     
     // We already have some DNS code in network::dns. Let's use hickory_resolver directly here to look up CNAMEs.

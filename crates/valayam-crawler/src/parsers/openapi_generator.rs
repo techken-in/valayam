@@ -71,6 +71,7 @@ pub fn generate_template_from_openapi(
         info: TemplateInfo {
             name: title.to_string(),
             severity: "Info".to_string(),
+            category: None,
             description,
             compliance: Default::default(),
             author: None,

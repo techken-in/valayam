@@ -198,6 +198,12 @@ pub struct Args {
     )]
     pub plugin_allow_host: Vec<String>,
 
+    #[arg(
+        long,
+        help = "Filter templates by SDLC testing category (e.g. unit, api, security, smoke)"
+    )]
+    pub testing_category: Option<String>,
+
     #[command(subcommand)]
     pub command: Option<Commands>,
 }

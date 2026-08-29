@@ -272,6 +272,31 @@ impl StealthHttpClient {
         follow_redirects: Option<bool>,
         timeout_override: Option<Duration>,
     ) -> Result<reqwest::Response, ScannerError> {
+        self.send_request_inner(method, url, headers, body.map(|s| s.as_bytes().to_vec()), follow_redirects, timeout_override).await
+    }
+
+    /// Send an HTTP request with stealth enhancements, accepting binary body.
+    pub async fn send_request_bytes(
+        &self,
+        method: &str,
+        url: &str,
+        headers: Option<&HashMap<String, String>>,
+        body: Option<Vec<u8>>,
+        follow_redirects: Option<bool>,
+        timeout_override: Option<Duration>,
+    ) -> Result<reqwest::Response, ScannerError> {
+        self.send_request_inner(method, url, headers, body, follow_redirects, timeout_override).await
+    }
+
+    async fn send_request_inner(
+        &self,
+        method: &str,
+        url: &str,
+        headers: Option<&HashMap<String, String>>,
+        body: Option<Vec<u8>>,
+        follow_redirects: Option<bool>,
+        timeout_override: Option<Duration>,
+    ) -> Result<reqwest::Response, ScannerError> {
         let start = Instant::now();
 
         if self.circuit_breaker.is_open() {
@@ -312,8 +337,8 @@ impl StealthHttpClient {
                         }
                     }
                     // Apply body
-                    if let Some(b) = body {
-                        proxied_req = proxied_req.body(b.to_string());
+                    if let Some(ref b) = body {
+                        proxied_req = proxied_req.body(b.clone());
                     }
                     // Apply timeout
                     if let Some(t) = timeout_override {
@@ -344,8 +369,8 @@ impl StealthHttpClient {
                 }
 
                 // Apply body if provided
-                if let Some(b) = body {
-                    request_builder = request_builder.body(b.to_string());
+                if let Some(ref b) = body {
+                    request_builder = request_builder.body(b.clone());
                 }
 
                 // Apply timeout

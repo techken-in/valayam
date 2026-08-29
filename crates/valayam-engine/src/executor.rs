@@ -20,6 +20,7 @@ pub struct ScanExecutor {
     rate_limiter: Option<Arc<RateLimiter>>,
     cancellation: CancellationToken,
     state_rx: Option<tokio::sync::watch::Receiver<ScanState>>,
+    concurrency_limit: Option<Arc<tokio::sync::Semaphore>>,
 }
 
 impl ScanExecutor {
@@ -36,7 +37,14 @@ impl ScanExecutor {
             rate_limiter,
             cancellation,
             state_rx: None,
+            concurrency_limit: None,
         }
+    }
+
+    /// Set a global concurrency limit for the executor
+    pub fn with_concurrency_limit(mut self, limit: usize) -> Self {
+        self.concurrency_limit = Some(Arc::new(tokio::sync::Semaphore::new(limit)));
+        self
     }
 
     /// Documentation for this item.
@@ -59,6 +67,12 @@ impl ScanExecutor {
                 tracing::info!("Scan resumed.");
             }
         }
+
+        let _permit = if let Some(sem) = &self.concurrency_limit {
+            Some(sem.acquire().await.expect("Semaphore closed"))
+        } else {
+            None
+        };
 
         self.registry
             .execute_template(
@@ -153,6 +167,7 @@ mod tests {
                 severity: "info".into(),
                 author: None,
                 description: None,
+                category: None,
                 tags: vec![],
                 compliance: Default::default(),
             },
