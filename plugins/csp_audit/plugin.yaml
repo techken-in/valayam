@@ -1,0 +1,5 @@
+name: "csp-audit"
+version: "1.0.0"
+runtime: "wasm"
+language: "rust"
+entrypoint: "csp_audit.wasm"

@@ -117,10 +117,15 @@ impl ScanPlugin for WasmPluginBridge {
             .replace('_', "-")
             .to_lowercase();
 
+        // 1. Check if the generic plugins block invokes this plugin
+        if template.plugins.iter().any(|p| p.id.to_lowercase() == normalised) {
+            return true;
+        }
+
         match normalised.as_str() {
-            // Well-known: check if template has a matching section by kebab-case name
+            // 2. Well-known: check if template has a matching section by kebab-case name
             n if template.has_section(n) => true,
-            // Unknown WASM plugin: opt-in by default (backwards compatible for custom plugins)
+            // 3. Unknown WASM plugin: opt-in by default (backwards compatible for custom plugins)
             _ => {
                 tracing::debug!(
                     plugin = %self.name,

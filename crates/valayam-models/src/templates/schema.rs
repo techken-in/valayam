@@ -12,6 +12,7 @@ use crate::templates::cors_audit::CorsAuditTemplate;
 use crate::templates::cred_monitor::CredMonitorTemplate;
 use crate::templates::csp_audit::CspAuditTemplate;
 use crate::templates::ct_log_audit::CtLogAuditTemplate;
+use crate::templates::custom_plugin::CustomPluginTemplate;
 use crate::templates::deep_analysis::DeepAnalysisTemplate;
 use crate::templates::dependency_audit::DependencyAuditTemplate;
 use crate::templates::dns_audit::DnsRequestTemplate;
@@ -68,6 +69,8 @@ pub struct VulnerabilityTemplate {
     pub network: Vec<NetworkRequestTemplate>,
     #[serde(default)]
     pub scripts: Vec<ScriptTemplate>,
+    #[serde(default)]
+    pub plugins: Vec<CustomPluginTemplate>,
     #[serde(default)]
     pub dns: Vec<DnsRequestTemplate>,
     #[serde(default)]
@@ -212,6 +215,7 @@ impl VulnerabilityTemplate {
             requests: vec![],
             network: vec![],
             scripts: vec![],
+            plugins: vec![],
             dns: vec![],
             tls: vec![],
             fuzz: vec![],
@@ -282,6 +286,9 @@ impl VulnerabilityTemplate {
         }
         for r in &self.scripts {
             s.push(r as &dyn TemplateSection);
+        }
+        for p in &self.plugins {
+            s.push(p as &dyn TemplateSection);
         }
         for d in &self.dns {
             s.push(d as &dyn TemplateSection);

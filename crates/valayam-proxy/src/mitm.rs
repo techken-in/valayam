@@ -224,6 +224,7 @@ async fn generate_template(uri: &str, method: &str, body: &str) -> std::io::Resu
         requests: vec![http_req],
         network: vec![],
         scripts: vec![],
+        plugins: vec![],
         dns: vec![],
         tls: vec![],
         fuzz: vec![],

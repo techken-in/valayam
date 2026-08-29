@@ -7,5 +7,10 @@ pub mod macros;
 pub mod models;
 
 pub use models::*;
+pub use valayam_plugin_macro::ValayamConfig;
+pub use schemars::JsonSchema;
+pub use serde;
+pub use serde_json;
+pub use schemars;
 
 pub mod host_funcs;

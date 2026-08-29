@@ -8304,13 +8304,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "valayam-plugin-macro"
+version = "0.1.0"
+dependencies = [
+ "quote",
+ "schemars",
+ "syn 2.0.118",
+]
+
+[[package]]
 name = "valayam-plugin-sdk"
 version = "0.1.0"
 dependencies = [
  "extism-pdk",
  "lazy_static",
+ "schemars",
  "serde",
  "serde_json",
+ "valayam-plugin-macro",
 ]
 
 [[package]]

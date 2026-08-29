@@ -1,0 +1,9 @@
+id: csp-check
+info:
+  name: CSP Headers Test
+  author: Agent
+  severity: low
+
+csp_audit:
+  - target: "{{BaseURL}}"
+    strict_mode: true

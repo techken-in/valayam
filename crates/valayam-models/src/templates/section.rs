@@ -77,6 +77,7 @@ impl_template_section!(super::cors_audit::CorsAuditTemplate, "cors-audit");
 impl_template_section!(super::cred_monitor::CredMonitorTemplate, "cred-monitor");
 impl_template_section!(super::csp_audit::CspAuditTemplate, "csp-audit");
 impl_template_section!(super::ct_log_audit::CtLogAuditTemplate, "ct-log-audit");
+impl_template_section!(super::custom_plugin::CustomPluginTemplate, "custom-plugin");
 impl_template_section!(super::deep_analysis::DeepAnalysisTemplate, "deep-analysis");
 impl_template_section!(
     super::dependency_audit::DependencyAuditTemplate,

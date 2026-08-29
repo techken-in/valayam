@@ -18,6 +18,7 @@ pub mod cors_audit;
 pub mod cred_monitor;
 pub mod csp_audit;
 pub mod ct_log_audit;
+pub mod custom_plugin;
 pub mod deep_analysis;
 pub mod dependency_audit;
 pub mod dns_audit;

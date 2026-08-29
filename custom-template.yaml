@@ -1,0 +1,10 @@
+id: custom-plugin-test
+info:
+  name: Custom Test
+  author: Agent
+  severity: info
+
+plugins:
+  - id: csp-audit
+    target: "{{BaseURL}}"
+    strict_mode: true

@@ -30,7 +30,7 @@ members = [
     "crates/valayam-mcp",
     "crates/valayam-agent",
     "crates/valayam-tests",
-    "crates/valayam-diff",
+    "crates/valayam-diff", "crates/valayam-plugin-macro",
     
 ]
 exclude = [
