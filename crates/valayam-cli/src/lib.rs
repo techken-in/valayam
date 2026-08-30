@@ -124,7 +124,11 @@ pub async fn run_cli() -> anyhow::Result<()> {
     }
     // ── Template path resolution ──────────────────────────────────────────
     let (template_path, is_nuclei) = resolve_template(&args);
-    ensure_demo_template(&template_path);
+    let template_files = if let Some(path) = &template_path {
+        crate::setup::discover_templates(path)
+    } else {
+        Vec::new()
+    };
 
     // ── Scan state channels ────────────────────────────────────────────────
     let (state_tx, state_rx) =
@@ -169,17 +173,6 @@ pub async fn run_cli() -> anyhow::Result<()> {
     // ── gRPC worker client ─────────────────────────────────────────────────
     let grpc_client = connect_worker(args.worker.as_deref()).await;
 
-    // ── Template discovery ─────────────────────────────────────────────────
-    let template_files = discover_templates(&template_path);
-    if template_files.is_empty() {
-        println!(
-            "{} No valid YAML templates found in {}",
-            "[!]".yellow().bold(),
-            template_path
-        );
-        return Ok(());
-    }
-
     // ── Pre-flight OOB DNS Check ───────────────────────────────────────────
     let oob_dns_bind = valayam_oob::server::OobServer::config_from_env().dns_bind;
     let oob_dns_active =
@@ -221,9 +214,10 @@ pub async fn run_cli() -> anyhow::Result<()> {
 
     // ── Print scan config ──────────────────────────────────────────────────
     let engine_name = if is_nuclei { "Nuclei" } else { "Native" };
+    // We will print scan config after building the master template, passing 0 for now
     print_scan_config(
         &args.target,
-        template_files.len(),
+        0, // this will be updated inside orchestrator or we can just pass 0
         engine_name,
         args.concurrency,
         args.rate_limit,

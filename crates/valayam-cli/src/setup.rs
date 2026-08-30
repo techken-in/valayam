@@ -18,10 +18,6 @@ use valayam_engine::rate_limiter::RateLimiter;
 /// Result of the scan setup phase. Everything needed for `orchestrator::run_scan`.
 #[allow(dead_code)]
 pub struct ScanSetup {
-    /// Resolved template files to scan with.
-    pub template_files: Vec<PathBuf>,
-    /// Whether templates are in Nuclei format.
-    pub is_nuclei: bool,
     /// Resolved targets (after optional crawler expansion).
     pub targets: Vec<String>,
     /// Shared stealth HTTP client.
@@ -36,69 +32,14 @@ pub struct ScanSetup {
     pub cancel: tokio_util::sync::CancellationToken,
 }
 
-/// Resolve the template path and determine the engine type.
-pub fn resolve_template(args: &Args) -> (String, bool) {
-    let default_template = "./templates_repo/demo-template.yaml".to_string();
-
+/// Resolve the template path flag if passed (mainly for nuclei legacy support).
+pub fn resolve_template(args: &Args) -> (Option<String>, bool) {
     if let Some(t) = &args.template {
-        (t.clone(), false)
+        (Some(t.clone()), false)
     } else if let Some(n) = &args.nuclei_template {
-        (n.clone(), true)
+        (Some(n.clone()), true)
     } else {
-        println!(
-            "{} No template flag provided. Defaulting to Native engine with demo template (-t {}).",
-            "[!]".yellow().bold(),
-            default_template
-        );
-        (default_template, false)
-    }
-}
-
-/// Auto-generate a demo template if the native template path doesn't exist.
-pub fn ensure_demo_template(template_path: &str) {
-    if !Path::new(template_path).exists() {
-        println!(
-            "{} Native template not found at '{}'. Generating demo template...",
-            "[!]".yellow().bold(),
-            template_path
-        );
-
-        if let Some(parent_dir) = Path::new(template_path).parent() {
-            let _ = std::fs::create_dir_all(parent_dir);
-        }
-
-        let demo_yaml = r#"
-id: basic-info-disclosure
-info:
-  name: "Basic Information Disclosure / SSRF Test"
-  severity: "Medium"
-  description: "Detects if the target reflects sensitive HTTP headers or payloads."
-requests:
-  - method: "GET"
-    path: "/get?test_param=valayam_engine"
-    headers:
-      X-Scanner-Test: "true"
-    matchers:
-      - type: "regex"
-        part: "body"
-        regex:
-          - "valayam_engine"
-      - type: "status"
-        part: "status"
-        status:
-          - 200
-network:
-  - host: "{{Hostname}}"
-    ports:
-      - "80"
-      - "443"
-      - "8080"
-"#;
-        let _ = std::fs::write(template_path, demo_yaml.trim());
-        println!(
-            "{} Demo template created successfully.\n",
-            "[+]".green().bold()
-        );
+        (None, false)
     }
 }
 
@@ -120,6 +61,34 @@ pub fn discover_templates(template_path: &str) -> Vec<PathBuf> {
         files.push(p.to_path_buf());
     }
     files
+}
+
+/// Auto-generate a dynamic master template for plugin execution.
+pub fn generate_master_template(plugins: &[String]) -> valayam_models::templates::schema::VulnerabilityTemplate {
+    use valayam_models::templates::schema::{VulnerabilityTemplate, TemplateInfo};
+    use valayam_models::templates::custom_plugin::CustomPluginTemplate;
+
+    let mut template = VulnerabilityTemplate::empty();
+    template.id = "dynamic-master-scan".to_string();
+    template.info = TemplateInfo {
+        name: "Plugin-Driven Master Scan".to_string(),
+        severity: "info".to_string(),
+        author: None,
+        description: Some("Dynamically generated template that runs all discovered plugins".to_string()),
+        category: None,
+        tags: vec![],
+        compliance: Default::default(),
+    };
+    
+    // Add every loaded plugin to the template
+    for plugin_id in plugins {
+        template.plugins.push(CustomPluginTemplate {
+            id: plugin_id.clone(),
+            config: serde_json::json!({}),
+        });
+    }
+    
+    template
 }
 
 /// Print the scan configuration table.
@@ -148,7 +117,7 @@ pub fn print_scan_config(
     println!(
         "  {}  {}  {} {} {}",
         "│".bright_black(),
-        "Templates:".bright_black(),
+        "Plugins:".bright_black(),
         format!("{}", template_count).white().bold(),
         "loaded".bright_black(),
         format!("({})", engine).bright_black()

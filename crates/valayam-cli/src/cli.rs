@@ -58,9 +58,8 @@ pub struct Args {
     pub template: Option<String>,
 
     #[arg(
-        short = 'n',
         long,
-        help = "Path to Nuclei YAML template file/dir (Isolated execution engine)",
+        help = "Run with Nuclei engine using the specified template",
         conflicts_with = "template"
     )]
     pub nuclei_template: Option<String>,

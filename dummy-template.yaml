@@ -1,0 +1,16 @@
+id: dummy-test-template
+info:
+  name: Dummy Test Template
+  author: valayam
+  severity: info
+  description: Dummy template for testing legacy execution
+
+requests:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200

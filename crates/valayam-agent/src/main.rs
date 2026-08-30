@@ -230,10 +230,6 @@ async fn execute_and_report(
         .map(|rps| Arc::new(valayam_engine::rate_limiter::RateLimiter::new_simple(rps)));
     let template_files = valayam_cli::setup::discover_templates(&tmp_dir.to_string_lossy());
 
-    if template_files.is_empty() {
-        anyhow::bail!("No valid templates found for job {}", job.job_id);
-    }
-
     if let Err(e) = valayam_cli::orchestrator::run_scan_with_job_id(
         scan_args,
         template_files,

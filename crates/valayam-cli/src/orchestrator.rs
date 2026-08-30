@@ -220,8 +220,6 @@ fn print_summary(
     println!();
 }
 
-#[allow(clippy::too_many_arguments)]
-#[tracing::instrument(skip(http_client, rate_limiter, grpc_client, state_rx, cancel))]
 pub async fn run_scan(
     args: Args,
     template_files: Vec<PathBuf>,
@@ -274,11 +272,14 @@ pub async fn run_scan_with_job_id(
     if let Ok(style) = ProgressStyle::with_template("{spinner:.cyan} {msg:.bright.black}") {
         spinner.set_style(style.tick_strings(&["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]));
     }
-    spinner.set_message(format!(
-        "Scanning {} target(s) with {} template(s)...",
-        targets.len(),
-        template_files.len()
-    ));
+    
+    let use_master_template = template_files.is_empty();
+    
+    spinner.set_message(if use_master_template {
+        format!("Scanning {} target(s) with plugins...", targets.len())
+    } else {
+        format!("Scanning {} target(s) with {} template(s)...", targets.len(), template_files.len())
+    });
 
     // ── 1. Create bounded MPSC channel ──
     let (finding_tx, mut finding_rx) = tokio::sync::mpsc::channel::<FindingOwned>(1000);
@@ -406,10 +407,17 @@ pub async fn run_scan_with_job_id(
 
             let mut pending_tasks = Vec::new();
             for target in &pending_for_shutdown {
-                for file_path in &template_files_for_shutdown {
-                    let task_key = (target.clone(), file_path.to_string_lossy().to_string());
+                if use_master_template {
+                    let task_key = (target.clone(), "dynamic-master-scan".to_string());
                     if !completed_tasks_for_shutdown.contains(&task_key) {
                         pending_tasks.push(task_key);
+                    }
+                } else {
+                    for file_path in &template_files_for_shutdown {
+                        let task_key = (target.clone(), file_path.to_string_lossy().to_string());
+                        if !completed_tasks_for_shutdown.contains(&task_key) {
+                            pending_tasks.push(task_key);
+                        }
                     }
                 }
             }
@@ -575,6 +583,15 @@ pub async fn run_scan_with_job_id(
 
         (reg_arc, _watcher)
     };
+    
+    // ── 3.5 Build Dynamic Master Template ──
+    // Load all discovered plugins into a single master template if no specific template is requested.
+    let master_template = if use_master_template {
+        let loaded_plugins = registry.list_plugins();
+        Arc::new(crate::setup::generate_master_template(&loaded_plugins))
+    } else {
+        Arc::new(VulnerabilityTemplate::empty()) // Dummy template
+    };
 
     // ── 4. Initialize all plugins (fail-fast on bad config) ──
     registry.init_all().await?;
@@ -589,10 +606,14 @@ pub async fn run_scan_with_job_id(
             reporters.push(Box::new(sarif_reporter));
         } else {
             let plugins = registry.list_plugins();
-            let templates = template_files
-                .iter()
-                .map(|p| p.to_string_lossy().into_owned())
-                .collect();
+            let templates = if use_master_template {
+                vec!["dynamic-master-scan".to_string()]
+            } else {
+                template_files
+                    .iter()
+                    .map(|p| p.to_string_lossy().into_owned())
+                    .collect()
+            };
             let scan_id = job_id
                 .clone()
                 .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
@@ -679,10 +700,17 @@ pub async fn run_scan_with_job_id(
 
     let mut tasks = Vec::new();
     for target in &actual_targets {
-        for file_path in &template_files {
-            let task_key = (target.clone(), file_path.to_string_lossy().to_string());
+        if use_master_template {
+            let task_key = (target.clone(), "dynamic-master-scan".to_string());
             if !completed_tasks_set.contains(&task_key) {
-                tasks.push((target.clone(), file_path.clone()));
+                tasks.push((target.clone(), PathBuf::from("dynamic-master-scan")));
+            }
+        } else {
+            for file_path in &template_files {
+                let task_key = (target.clone(), file_path.to_string_lossy().to_string());
+                if !completed_tasks_set.contains(&task_key) {
+                    tasks.push((target.clone(), file_path.clone()));
+                }
             }
         }
     }
@@ -695,68 +723,83 @@ pub async fn run_scan_with_job_id(
         let grpc_client_clone = grpc_client_arc.clone();
         let finding_tx_clone = finding_tx.clone();
         let desired_category = args.testing_category.clone();
+        let master_tpl = master_template.clone();
+        
         async move {
             let path_str = file_path_clone.to_string_lossy().to_string();
 
             if is_nuclei {
-                tracing::warn!("Nuclei execution moved to Wasm plugin, skipping native execution for {}", path_str);
+                tracing::warn!("Nuclei execution moved to Wasm plugin, skipping native execution for {}", target_url);
             } else {
-                if let Some(grpc_arc) = grpc_client_clone {
-                    let mut client = (*grpc_arc).clone();
-                    let yaml_str = match fs::read_to_string(&file_path_clone) {
-                        Ok(s) => s,
-                        Err(e) => {
-                            tracing::error!("Failed to read template {}: {}", path_str, e);
-                            return;
+                if use_master_template {
+                    if let Some(_grpc_arc) = grpc_client_clone {
+                        tracing::warn!("gRPC execution skipped for dynamic master template");
+                    } else {
+                        let metrics = exec.execute(&target_url, master_tpl).await;
+                        for m in metrics {
+                            tracing::debug!(
+                                plugin = %m.plugin_name,
+                                outcome = %m.outcome,
+                                duration_ms = m.duration.as_millis() as u64,
+                                findings = m.finding_count,
+                            );
                         }
-                    };
-
-                    let req = tonic::Request::new(valayam_core::rpc::ScanRequest {
-                        template_yaml: yaml_str,
-                        target_url: target_url.clone(),
-                    });
-
-                    match client.scan(req).await {
-                        Ok(response) => {
-                            let resp = response.into_inner();
-                            for finding_json in resp.findings_json {
-                                if let Ok(scan_res) = serde_json::from_str::<valayam_core::core::result::ScanResult>(&finding_json) {
-                                    let finding = valayam_core::core::scan_result_bridge::scan_result_to_finding(scan_res);
-                                    let _ = finding_tx_clone.send(finding).await;
-                                }
-                            }
-                        }
-                        Err(e) => tracing::error!("gRPC error for template {}: {}", path_str, e),
                     }
                 } else {
-                    let template = match VulnerabilityTemplate::load(&file_path_clone) {
-                        Ok(t) => {
-                            if let Some(ref desired_cat) = desired_category {
-                                let matches = match &t.info.category {
-                                    Some(cat) => cat.to_string() == *desired_cat || format!("{:?}", cat).to_lowercase() == desired_cat.to_lowercase(),
-                                    None => false,
-                                };
-                                if !matches {
-                                    tracing::trace!("Skipping template {} (does not match testing category {})", path_str, desired_cat);
-                                    return;
+                    if let Some(grpc_arc) = grpc_client_clone {
+                        let mut client = (*grpc_arc).clone();
+                        let yaml_str = match fs::read_to_string(&file_path_clone) {
+                            Ok(s) => s,
+                            Err(e) => {
+                                tracing::error!("Failed to read template {}: {}", path_str, e);
+                                return;
+                            }
+                        };
+                        let req = tonic::Request::new(valayam_core::rpc::ScanRequest {
+                            template_yaml: yaml_str,
+                            target_url: target_url.clone(),
+                        });
+                        match client.scan(req).await {
+                            Ok(response) => {
+                                let resp = response.into_inner();
+                                for finding_json in resp.findings_json {
+                                    if let Ok(scan_res) = serde_json::from_str::<valayam_core::core::result::ScanResult>(&finding_json) {
+                                        let finding = valayam_core::core::scan_result_bridge::scan_result_to_finding(scan_res);
+                                        let _ = finding_tx_clone.send(finding).await;
+                                    }
                                 }
                             }
-                            Arc::new(t)
+                            Err(e) => tracing::error!("gRPC error for template {}: {}", path_str, e),
                         }
-                        Err(e) => {
-                            tracing::error!("Failed to load Native template {}: {}", path_str, e);
-                            return;
+                    } else {
+                        let template = match VulnerabilityTemplate::load(&file_path_clone) {
+                            Ok(t) => {
+                                if let Some(ref desired_cat) = desired_category {
+                                    let matches = match &t.info.category {
+                                        Some(cat) => cat.to_string() == *desired_cat || format!("{:?}", cat).to_lowercase() == desired_cat.to_lowercase(),
+                                        None => false,
+                                    };
+                                    if !matches {
+                                        tracing::trace!("Skipping template {} (does not match testing category {})", path_str, desired_cat);
+                                        return;
+                                    }
+                                }
+                                Arc::new(t)
+                            }
+                            Err(e) => {
+                                tracing::error!("Failed to load Native template {}: {}", path_str, e);
+                                return;
+                            }
+                        };
+                        let metrics = exec.execute(&target_url, template).await;
+                        for m in metrics {
+                            tracing::debug!(
+                                plugin = %m.plugin_name,
+                                outcome = %m.outcome,
+                                duration_ms = m.duration.as_millis() as u64,
+                                findings = m.finding_count,
+                            );
                         }
-                    };
-
-                    let metrics = exec.execute(&target_url, template).await;
-                    for m in metrics {
-                        tracing::debug!(
-                            plugin = %m.plugin_name,
-                            outcome = %m.outcome,
-                            duration_ms = m.duration.as_millis() as u64,
-                            findings = m.finding_count,
-                        );
                     }
                 }
             }
@@ -791,9 +834,15 @@ pub async fn run_scan_with_job_id(
     let counts = severity_counts.lock().await;
     let dupes = dedup_count.load(std::sync::atomic::Ordering::Relaxed);
 
+    let total_templates = if use_master_template {
+        registry.len()
+    } else {
+        template_files.len()
+    };
+
     print_summary(
         scan_duration,
-        template_files.len(),
+        total_templates, // Use loaded plugins count for summary if master template, else file count
         actual_targets.len(),
         &counts,
         dupes,
