@@ -109,24 +109,24 @@ pub fn print_scan_config(
         format!("┌─ Scan Configuration {}┐", "─".repeat(32)).bright_black()
     );
     println!(
-        "  {}  {}     {}",
+        "  {}  {} {}",
         "│".bright_black(),
-        "Target:".bright_black(),
+        format!("{:15}", "Target:").bright_black(),
         target.cyan().bold()
     );
     println!(
-        "  {}  {}  {} {} {}",
+        "  {}  {} {} {} {}",
         "│".bright_black(),
-        "Plugins:".bright_black(),
+        format!("{:15}", "Plugins:").bright_black(),
         format!("{}", template_count).white().bold(),
         "loaded".bright_black(),
         format!("({})", engine).bright_black()
     );
     let rate_str = rate_limit.map_or("unlimited".to_string(), |r| format!("{} req/s", r));
     println!(
-        "  {}  {}       {} {} {} {}",
+        "  {}  {} {} {} {} {}",
         "│".bright_black(),
-        "Tuning:".bright_black(),
+        format!("{:15}", "Tuning:").bright_black(),
         "concurrency".bright_black(),
         format!("{}", concurrency).white(),
         "│ rate limit".bright_black(),
@@ -139,9 +139,9 @@ pub fn print_scan_config(
         "Offline / Unreachable".red().to_string()
     };
     println!(
-        "  {}  {}  {}",
+        "  {}  {} {}",
         "│".bright_black(),
-        "Target Status:".bright_black(),
+        format!("{:15}", "Target Status:").bright_black(),
         conn_status
     );
 
@@ -151,9 +151,9 @@ pub fn print_scan_config(
         "Offline / Disabled".yellow().to_string()
     };
     println!(
-        "  {}  {}  {}",
+        "  {}  {} {}",
         "│".bright_black(),
-        "Telemetry:".bright_black(),
+        format!("{:15}", "Telemetry:").bright_black(),
         telemetry_status
     );
 
@@ -163,25 +163,25 @@ pub fn print_scan_config(
         "Offline / Port Occupied".yellow().to_string()
     };
     println!(
-        "  {}  {}    {}",
+        "  {}  {} {}",
         "│".bright_black(),
-        "OOB DNS:".bright_black(),
+        format!("{:15}", "OOB DNS:").bright_black(),
         oob_status
     );
 
     if let Some(out) = output {
         println!(
-            "  {}  {}     {} {}",
+            "  {}  {} {} {}",
             "│".bright_black(),
-            "Output:".bright_black(),
+            format!("{:15}", "Output:").bright_black(),
             "console".white(),
             format!("+ {}", out).bright_black()
         );
     } else {
         println!(
-            "  {}  {}     {}",
+            "  {}  {} {}",
             "│".bright_black(),
-            "Output:".bright_black(),
+            format!("{:15}", "Output:").bright_black(),
             "console".white()
         );
     }

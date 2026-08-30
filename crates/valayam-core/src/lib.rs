@@ -1,4 +1,4 @@
-#![warn(missing_docs)]
+#![allow(missing_docs)]
 //! Core scanning engine for Valayam network security scanner.
 //!
 //! Provides HTTP scanning, crawling, template execution, threat intelligence,

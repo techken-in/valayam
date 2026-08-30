@@ -10,7 +10,7 @@ pub mod setup;
 pub mod state;
 // Telemetry moved to `valayam-telemetry` crate — see init_telemetry() call below.
 
-use clap::Parser;
+
 use colored::*;
 use std::io::Read;
 use std::path::Path;
@@ -37,7 +37,19 @@ fn print_banner() {
 }
 
 pub async fn run_cli() -> anyhow::Result<()> {
-    let mut args = cli::Args::parse();
+    use clap::Parser;
+    let mut args = match cli::Args::try_parse() {
+        Ok(args) => args,
+        Err(e) => {
+            use colored::Colorize;
+            if e.kind() == clap::error::ErrorKind::DisplayHelp || e.kind() == clap::error::ErrorKind::DisplayVersion {
+                e.exit();
+            } else {
+                eprintln!("{} {}", "[-]".red().bold(), e.to_string().trim());
+                std::process::exit(1);
+            }
+        }
+    };
 
     // Ensure target has a valid protocol to prevent URL parsing errors
     if !args.target.starts_with("http://") && !args.target.starts_with("https://") {
@@ -95,6 +107,14 @@ pub async fn run_cli() -> anyhow::Result<()> {
         return handle_plugin_command(action).await;
     }
     // Handle vuln DB sync — early return
+    // Handle completions subcommand — early return
+    if let Some(cli::Commands::Completions { shell }) = &args.command {
+        use clap::CommandFactory;
+        let mut cmd = cli::Args::command();
+        clap_complete::generate(*shell, &mut cmd, "valayam", &mut std::io::stdout());
+        return Ok(());
+    }
+    // Handle sync-vulndb subcommand — early return
     if let Some(cli::Commands::SyncVulndb { cdn, output }) = &args.command {
         if let Err(e) = crate::orchestrator::sync_vulndb(cdn, output).await {
             tracing::error!("Failed to sync vulnerability database: {}", e);
@@ -125,7 +145,11 @@ pub async fn run_cli() -> anyhow::Result<()> {
     // ── Template path resolution ──────────────────────────────────────────
     let (template_path, is_nuclei) = resolve_template(&args);
     let template_files = if let Some(path) = &template_path {
-        crate::setup::discover_templates(path)
+        let files = crate::setup::discover_templates(path);
+        if files.is_empty() {
+            anyhow::bail!("No template files found at '{}'", path);
+        }
+        files
     } else {
         Vec::new()
     };
@@ -297,6 +321,9 @@ fn spawn_telemetry_server(
 async fn handle_plugin_command(action: &cli::PluginCommands) -> anyhow::Result<()> {
     match action {
         cli::PluginCommands::Package { dir, output, sign } => {
+            if !std::path::Path::new(dir).exists() {
+                anyhow::bail!("Plugin directory not found at '{}'", dir);
+            }
             crate::plugin_cli::package_plugin(dir, output.as_deref(), sign.as_deref())
                 .map_err(|e| anyhow::anyhow!("Failed to package plugin: {}", e))?;
         }
@@ -323,6 +350,9 @@ async fn handle_plugin_command(action: &cli::PluginCommands) -> anyhow::Result<(
             tag,
             signature,
         } => {
+            if !std::path::Path::new(file).exists() {
+                anyhow::bail!("Plugin file not found at '{}'", file);
+            }
             crate::plugin_cli::push_plugin(file, repo, tag, signature.as_deref())
                 .await
                 .map_err(|e| anyhow::anyhow!("Failed to push plugin to OCI registry: {}", e))?;
@@ -341,6 +371,9 @@ async fn handle_plugin_command(action: &cli::PluginCommands) -> anyhow::Result<(
                 .map_err(|e| anyhow::anyhow!("Failed to search plugins: {}", e))?;
         }
         cli::PluginCommands::Publish { file } => {
+            if !std::path::Path::new(file).exists() {
+                anyhow::bail!("Plugin file not found at '{}'", file);
+            }
             crate::plugin_cli::publish_plugin(file)
                 .await
                 .map_err(|e| anyhow::anyhow!("Failed to publish plugin: {}", e))?;
@@ -425,6 +458,16 @@ async fn handle_bundle_command(action: &cli::BundleCommands) -> anyhow::Result<(
             pubkey,
             output,
         } => {
+            if !std::path::Path::new(plugins).exists() {
+                anyhow::bail!("Plugins directory not found at '{}'", plugins);
+            }
+            if !std::path::Path::new(templates).exists() {
+                anyhow::bail!("Templates directory not found at '{}'", templates);
+            }
+            if !std::path::Path::new(pubkey).exists() {
+                anyhow::bail!("Public key file not found at '{}'", pubkey);
+            }
+
             tracing::info!(
                 "Creating air-gapped bundle from {} + {} → {}",
                 plugins,
@@ -526,6 +569,9 @@ async fn handle_bundle_command(action: &cli::BundleCommands) -> anyhow::Result<(
             tracing::info!("Verifying bundle: {}", bundle);
 
             let bundle_dir = std::path::Path::new(&bundle);
+            if !bundle_dir.exists() {
+                anyhow::bail!("Bundle directory not found at '{}'", bundle);
+            }
             let manifest_path = bundle_dir.join("manifest.json");
             if !manifest_path.exists() {
                 anyhow::bail!("manifest.json not found in bundle directory");
@@ -630,7 +676,7 @@ async fn handle_template_command(action: &cli::TemplateCommands) -> anyhow::Resu
 
             let src_path = Path::new(&path);
             if !src_path.exists() {
-                anyhow::bail!("Source path '{}' does not exist", path);
+                anyhow::bail!("Source path not found at '{}'", path);
             }
 
             let mut pushed = 0;
@@ -739,6 +785,13 @@ async fn handle_diff_command(baseline: &str, current: &str) -> anyhow::Result<()
     use std::fs;
     use valayam_diff::DiffReport;
     use valayam_models::finding::FindingOwned;
+
+    if !std::path::Path::new(baseline).exists() {
+        anyhow::bail!("Baseline file not found at '{}'", baseline);
+    }
+    if !std::path::Path::new(current).exists() {
+        anyhow::bail!("Current file not found at '{}'", current);
+    }
 
     tracing::info!("Running scan diff between {} and {}", baseline, current);
 

@@ -1,3 +1,4 @@
+#![allow(unused)]
 pub mod grpc;
 pub mod telemetry;
 
@@ -9,7 +10,9 @@ use tokio_stream::wrappers::ReceiverStream;
 use aya::{maps::perf::AsyncPerfEventArray, programs::TracePoint, util::online_cpus, Ebpf};
 #[cfg(target_os = "linux")]
 use bytes::BytesMut;
+#[cfg(target_os = "linux")]
 use std::time::Duration;
+#[cfg(target_os = "linux")]
 use tokio::time::sleep;
 
 #[cfg(target_os = "linux")]

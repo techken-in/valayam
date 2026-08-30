@@ -276,7 +276,7 @@ impl PluginRegistry {
         self: Arc<Self>,
         dir_path: std::path::PathBuf,
     ) -> anyhow::Result<Box<dyn std::any::Any + Send + Sync>> {
-        use notify::{EventKind, RecursiveMode, Watcher};
+        use notify::{RecursiveMode, Watcher};
 
         // Initial load
         let _ = self.load_external_plugins(&dir_path);

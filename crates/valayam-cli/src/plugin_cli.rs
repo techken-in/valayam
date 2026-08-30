@@ -69,11 +69,7 @@ pub fn package_plugin(dir: &str, output: Option<&str>, sign: Option<&str>) -> an
     if let Some(priv_key_path) = sign {
         println!("Signing plugin with key: {}", priv_key_path);
         let priv_key_bytes = std::fs::read(priv_key_path)?;
-        if priv_key_bytes.len() != 32 {
-            anyhow::bail!("Invalid private key length (expected 32 bytes)");
-        }
-        let mut priv_key = [0u8; 32];
-        priv_key.copy_from_slice(&priv_key_bytes[0..32]);
+        let priv_key = valayam_crypto::PluginCrypto::decode_key_bytes(&priv_key_bytes)?;
         let manifest_bytes = std::fs::read(&manifest_path)?;
         let signature = valayam_crypto::PluginCrypto::sign(&priv_key, &manifest_bytes)?;
 
@@ -441,13 +437,15 @@ pub fn generate_key(output_prefix: &str) -> anyhow::Result<()> {
     let (priv_key, pub_key) = valayam_crypto::PluginCrypto::generate_keypair();
     let priv_path = format!("{}.pem", output_prefix);
     let pub_path = format!("{}.pub", output_prefix);
-    std::fs::write(&priv_path, priv_key)?;
-    std::fs::write(&pub_path, pub_key)?;
+    let priv_pem = valayam_crypto::PluginCrypto::encode_private_key_pem(&priv_key);
+    let pub_pem = valayam_crypto::PluginCrypto::encode_public_key_pem(&pub_key);
+    std::fs::write(&priv_path, priv_pem)?;
+    std::fs::write(&pub_path, pub_pem)?;
     println!("Generated ED25519 keypair:\n- Private key (Keep Secret!): {}\n- Public key (Distribute!): {}", priv_path, pub_path);
     Ok(())
 }
 
-pub async fn install_plugin(name: &str, url: &str, pubkey_hex: Option<&str>) -> anyhow::Result<()> {
+pub async fn install_plugin(name: &str, url: &str, pubkey_str: Option<&str>) -> anyhow::Result<()> {
     use valayam_core::distribution::puller::PluginPuller;
 
     // Air-gapped mode guard: block network operations
@@ -459,15 +457,14 @@ pub async fn install_plugin(name: &str, url: &str, pubkey_hex: Option<&str>) -> 
         .unwrap_or_else(std::env::temp_dir)
         .join("valayam/plugins_cache");
 
-    let pk_bytes = if let Some(hex_str) = pubkey_hex {
-        let decoded =
-            hex::decode(hex_str).map_err(|e| anyhow::anyhow!("Invalid hex in pubkey: {}", e))?;
-        if decoded.len() != 32 {
-            anyhow::bail!("Public key must be exactly 32 bytes (64 hex characters)");
-        }
-        let mut arr = [0u8; 32];
-        arr.copy_from_slice(&decoded);
-        Some(arr)
+    let pk_bytes = if let Some(key_str) = pubkey_str {
+        let key = if std::path::Path::new(key_str).exists() {
+            let bytes = std::fs::read(key_str)?;
+            valayam_crypto::PluginCrypto::decode_key_bytes(&bytes)?
+        } else {
+            valayam_crypto::PluginCrypto::decode_key_bytes(key_str.as_bytes())?
+        };
+        Some(key)
     } else {
         println!("Warning: No public key provided. Signature verification will be bypassed.");
         None

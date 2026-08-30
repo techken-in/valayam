@@ -20,16 +20,22 @@ fn cli_styles() -> clap::builder::Styles {
     styles = cli_styles(),
     after_help = "\x1b[1;36mEXAMPLES:\x1b[0m
   \x1b[1mBasic HTTP template scan:\x1b[0m
-    valayam -u https://target.com -t ./templates_repo/demo-template.yaml
+    valayam -u https://target.com -t ./demo-template.yaml
 
   \x1b[1mBatch template execution (runs all .yaml files in directory concurrently):\x1b[0m
-    valayam -u https://target.com -t ./templates_repo/
+    valayam -u https://target.com -t ./templates/
+
+  \x1b[1mRun Nuclei templates:\x1b[0m
+    valayam -u https://target.com --nuclei-template ./nuclei-templates/
 
   \x1b[1mRhai script template (multi-step chain):\x1b[0m
-    valayam -u https://target.com -t ./templates_repo/script-demo.yaml
+    valayam -u https://target.com -t ./script-demo.yaml
 
-  \x1b[1mSave findings to JSONL:\x1b[0m
-    valayam -u https://target.com -t ./templates_repo/ -o results.jsonl
+  \x1b[1mSave findings to JSON / SARIF:\x1b[0m
+    valayam -u https://target.com -t ./demo-template.yaml -o results.json --format sarif
+
+  \x1b[1mPre-scan web crawl & WAF detection:\x1b[0m
+    valayam -u https://target.com --crawl --crawl-depth 3 --waf-detect
 
 \x1b[1;36mTEMPLATE TYPES:\x1b[0m
   Templates are YAML files that can contain any combination of:
@@ -45,163 +51,255 @@ pub struct Args {
         short = 'u',
         long,
         default_value = "https://httpbin.org",
-        help = "Target Base URL"
+        value_name = "URL",
+        help_heading = "TARGET CONFIGURATION",
+        help = "Target base URL or hostname (e.g. https://example.com or 192.168.1.1)"
     )]
     pub target: String,
 
     #[arg(
+        long,
+        help_heading = "TARGET CONFIGURATION",
+        help = "Crawl the target URL first to discover endpoints and expand attack surface"
+    )]
+    pub crawl: bool,
+
+    #[arg(
+        long,
+        default_value = "3",
+        value_name = "DEPTH",
+        help_heading = "TARGET CONFIGURATION",
+        help = "Maximum link traversal depth for the crawler"
+    )]
+    pub crawl_depth: usize,
+
+    #[arg(
+        long,
+        value_name = "HEADERS",
+        help_heading = "TARGET CONFIGURATION",
+        help = "Custom headers for crawler requests (format: 'Key:Value,Key2:Value2')"
+    )]
+    pub crawl_headers: Option<String>,
+
+    #[arg(
+        long,
+        help_heading = "TARGET CONFIGURATION",
+        help = "Allow scanning internal/private IP ranges (RFC 1918 / loopback; disabled by default for SSRF safety)"
+    )]
+    pub allow_internal: bool,
+
+    #[arg(
         short = 't',
         long,
-        help = "Path to Native YAML template file/dir (HTTP/TCP/Rhai)",
+        value_name = "TEMPLATE",
+        help_heading = "SCAN & TEMPLATES",
+        help = "Path to Native YAML template file or directory (HTTP/TCP/Rhai)",
         conflicts_with = "nuclei_template"
     )]
     pub template: Option<String>,
 
     #[arg(
+        short = 'n',
         long,
-        help = "Run with Nuclei engine using the specified template",
+        num_args = 0..=1,
+        default_missing_value = "nuclei-templates",
+        value_name = "TEMPLATE",
+        help_heading = "SCAN & TEMPLATES",
+        help = "Run with Nuclei engine using specified template file or directory (defaults to 'nuclei-templates' if omitted)",
         conflicts_with = "template"
     )]
     pub nuclei_template: Option<String>,
 
-    #[arg(short = 'o', long, help = "Path to write output to")]
-    pub output: Option<String>,
-
     #[arg(
         long,
-        default_value = "json",
-        help = "Output format (json, sarif, pdf)"
+        value_name = "CATEGORY",
+        help_heading = "SCAN & TEMPLATES",
+        help = "Filter templates by SDLC testing category (e.g. unit, api, security, smoke)"
     )]
-    pub format: String,
+    pub testing_category: Option<String>,
 
     #[arg(
         short = 'r',
         long,
-        help = "Max requests per second (global rate limit)"
+        value_name = "RPS",
+        help_heading = "PERFORMANCE & TUNING",
+        help = "Maximum requests per second (global rate limit across all concurrent workers)"
     )]
     pub rate_limit: Option<u32>,
 
     #[arg(
         long,
         default_value = "500",
-        help = "Max concurrent template executions"
+        value_name = "NUM",
+        help_heading = "PERFORMANCE & TUNING",
+        help = "Maximum concurrent template executions and network requests"
     )]
     pub concurrency: usize,
 
-    #[arg(long, help = "Rotate User-Agent header randomly per request")]
+    #[arg(
+        long,
+        help_heading = "PERFORMANCE & TUNING",
+        help = "Rotate User-Agent header randomly per request from a built-in pool of modern browsers"
+    )]
     pub random_agent: bool,
 
-    #[arg(long, help = "Path to proxy list file (one proxy per line)")]
+    #[arg(
+        long,
+        num_args = 0..=1,
+        default_missing_value = "proxies.txt",
+        value_name = "FILE",
+        help_heading = "PERFORMANCE & TUNING",
+        help = "Path to proxy list file for round-robin rotation (defaults to 'proxies.txt' if omitted)"
+    )]
     pub proxy_file: Option<String>,
+
+    #[arg(
+        short = 'o',
+        long,
+        num_args = 0..=1,
+        default_missing_value = "valayam-report.json",
+        value_name = "FILE",
+        help_heading = "OUTPUT & REPORTING",
+        help = "Destination file path to save scan report (defaults to 'valayam-report.json' if omitted)"
+    )]
+    pub output: Option<String>,
+
+    #[arg(
+        long,
+        default_value = "json",
+        value_name = "FORMAT",
+        help_heading = "OUTPUT & REPORTING",
+        help = "Output report format [possible values: json, sarif, pdf, html, markdown]"
+    )]
+    pub format: String,
 
     #[arg(
         short = 'l',
         long,
         default_value = "info",
-        help = "Log level (trace, debug, info, warn, error)"
+        value_name = "LEVEL",
+        help_heading = "OUTPUT & REPORTING",
+        help = "Logging verbosity level [possible values: trace, debug, info, warn, error]"
     )]
     pub log_level: String,
 
-    #[arg(short = 'f', long, help = "Path to output verbose logs to a JSON file")]
+    #[arg(
+        short = 'f',
+        long,
+        num_args = 0..=1,
+        default_missing_value = "valayam.log.json",
+        value_name = "FILE",
+        help_heading = "OUTPUT & REPORTING",
+        help = "File path to export structured JSON logs (defaults to 'valayam.log.json' if omitted)"
+    )]
     pub log_file: Option<String>,
 
     #[arg(
         long,
-        help = "URI of a Valayam gRPC worker node (e.g. http://127.0.0.1:50051)"
+        help_heading = "OUTPUT & REPORTING",
+        help = "Launch the interactive terminal dashboard (TUI) to monitor findings in real-time"
     )]
-    pub worker: Option<String>,
-
-    #[arg(long, help = "Crawl the target URL first to discover pages")]
-    pub crawl: bool,
-
-    #[arg(long, default_value = "3", help = "Maximum depth for crawler")]
-    pub crawl_depth: usize,
+    pub tui: bool,
 
     #[arg(
         long,
-        help = "Custom headers for crawler requests (format: Key:Value,Key2:Value2)"
-    )]
-    pub crawl_headers: Option<String>,
-
-    #[arg(
-        long,
-        help = "Detect and fingerprint Web Application Firewalls (WAF) before scanning"
-    )]
-    pub waf_detect: bool,
-
-    #[arg(
-        long,
-        help = "Start a local MITM proxy on the specified port to capture traffic and generate templates"
-    )]
-    pub mitm_proxy: Option<u16>,
-
-    #[arg(long, help = "Resume a previously interrupted scan using its state ID")]
-    pub resume: Option<String>,
-
-    #[arg(long, help = "Port to start the execution control API server on")]
-    pub control_port: Option<u16>,
-
-    #[arg(
-        long,
-        help = "Path to TLS certificate file (PEM) for gRPC control plane encryption"
-    )]
-    pub tls_cert: Option<String>,
-
-    #[arg(
-        long,
-        help = "Path to TLS private key file (PEM) for gRPC control plane encryption"
-    )]
-    pub tls_key: Option<String>,
-
-    #[arg(
-        long,
-        help = "Path to CA certificate (PEM) for mTLS client verification on the gRPC control plane"
-    )]
-    pub tls_ca: Option<String>,
-
-    #[arg(
-        long,
+        help_heading = "PLUGIN SECURITY & RUNTIME",
         help = "Enforce plugin signature verification — reject unsigned WASM/VPA plugins at load time"
     )]
     pub require_signed_plugins: bool,
 
     #[arg(
         long,
-        help = "Launch the interactive Ratatui dashboard to view findings in real-time"
-    )]
-    pub tui: bool,
-
-    #[arg(
-        long,
-        help = "Allow scanning internal/private IP ranges (disabled by default for SSRF protection)"
-    )]
-    pub allow_internal: bool,
-
-    #[arg(
-        long,
         default_value = "50",
-        help = "Memory limit per WASM plugin execution in MB"
+        value_name = "MB",
+        help_heading = "PLUGIN SECURITY & RUNTIME",
+        help = "Memory limit per WASM plugin execution instance in megabytes"
     )]
     pub plugin_memory_limit: u32,
 
     #[arg(
         long,
         default_value = "30",
-        help = "Plugin execution timeout in seconds (default: 30)"
+        value_name = "SECS",
+        help_heading = "PLUGIN SECURITY & RUNTIME",
+        help = "Plugin execution timeout in seconds"
     )]
     pub plugin_timeout: u64,
 
     #[arg(
         long,
-        help = "Repeatable: allow plugin egress to specific host (default: deny all). Can specify multiple times."
+        value_name = "HOST",
+        help_heading = "PLUGIN SECURITY & RUNTIME",
+        help = "Repeatable: allow plugin network egress to a specific host (default: deny all)"
     )]
     pub plugin_allow_host: Vec<String>,
 
     #[arg(
         long,
-        help = "Filter templates by SDLC testing category (e.g. unit, api, security, smoke)"
+        value_name = "URI",
+        help_heading = "DISTRIBUTED & CONTROL PLANE",
+        help = "URI of a remote Valayam gRPC worker node (e.g. http://127.0.0.1:50051)"
     )]
-    pub testing_category: Option<String>,
+    pub worker: Option<String>,
+
+    #[arg(
+        long,
+        help_heading = "DISTRIBUTED & CONTROL PLANE",
+        help = "Detect and fingerprint Web Application Firewalls (WAF) before executing scans"
+    )]
+    pub waf_detect: bool,
+
+    #[arg(
+        long,
+        num_args = 0..=1,
+        default_missing_value = "8080",
+        value_name = "PORT",
+        help_heading = "DISTRIBUTED & CONTROL PLANE",
+        help = "Start a local MITM proxy on the specified port to capture traffic and generate templates (defaults to 8080)"
+    )]
+    pub mitm_proxy: Option<u16>,
+
+    #[arg(
+        long,
+        value_name = "STATE_ID",
+        help_heading = "DISTRIBUTED & CONTROL PLANE",
+        help = "Resume a previously interrupted scan session using its state ID"
+    )]
+    pub resume: Option<String>,
+
+    #[arg(
+        long,
+        num_args = 0..=1,
+        default_missing_value = "50051",
+        value_name = "PORT",
+        help_heading = "DISTRIBUTED & CONTROL PLANE",
+        help = "Port to start the live execution control gRPC API server on (defaults to 50051)"
+    )]
+    pub control_port: Option<u16>,
+
+    #[arg(
+        long,
+        value_name = "FILE",
+        help_heading = "DISTRIBUTED & CONTROL PLANE",
+        help = "Path to TLS certificate file (PEM) for gRPC control plane encryption"
+    )]
+    pub tls_cert: Option<String>,
+
+    #[arg(
+        long,
+        value_name = "FILE",
+        help_heading = "DISTRIBUTED & CONTROL PLANE",
+        help = "Path to TLS private key file (PEM) for gRPC control plane encryption"
+    )]
+    pub tls_key: Option<String>,
+
+    #[arg(
+        long,
+        value_name = "FILE",
+        help_heading = "DISTRIBUTED & CONTROL PLANE",
+        help = "Path to CA certificate (PEM) for mTLS client verification on the gRPC control plane"
+    )]
+    pub tls_ca: Option<String>,
 
     #[command(subcommand)]
     pub command: Option<Commands>,
@@ -209,171 +307,188 @@ pub struct Args {
 
 #[derive(clap::Subcommand, Debug, Clone)]
 pub enum Commands {
-    /// Plugin management utilities
+    /// Generate shell auto-completion scripts for Bash, Zsh, Fish, PowerShell, or Elvish
+    Completions {
+        /// Target shell to generate completions for [possible values: bash, zsh, fish, powershell, elvish]
+        #[arg(value_enum, value_name = "SHELL")]
+        shell: clap_complete::Shell,
+    },
+    /// Manage, package, sign, and install Valayam plugins (.vpa)
     Plugin {
         #[command(subcommand)]
         action: PluginCommands,
     },
+    /// Send runtime execution control signals (pause, resume, cancel) to a worker node
     Control {
-        /// The control action (pause, resume, cancel)
+        /// Control action to execute: pause, resume, or cancel
+        #[arg(value_name = "ACTION")]
         action: String,
-        /// Optional scan ID if controlling a multi-tenant worker node
-        #[arg(long)]
+        /// Scan state ID (required when controlling multi-tenant workers)
+        #[arg(long, value_name = "STATE_ID")]
         scan_id: Option<String>,
-        /// The gRPC control port (defaults to 50051)
-        #[arg(long, default_value = "50051")]
+        /// gRPC control port (defaults to 50051)
+        #[arg(long, default_value = "50051", value_name = "PORT")]
         port: u16,
     },
-    /// Sync the local vulnerability database from the Valayam CDN (Air-Gapped environments)
+    /// Sync local vulnerability database from the Valayam CDN for offline/air-gapped scanning
     SyncVulndb {
-        /// The CDN or server URL to pull the signed database from
-        #[arg(long, default_value = "https://cdn.valayam.io")]
+        /// CDN or server URL to download signed SQLite database from
+        #[arg(long, default_value = "https://cdn.valayam.io", value_name = "URL")]
         cdn: String,
-        /// The output path for the synced database
-        #[arg(long, default_value = "data/vuln-db.sqlite")]
+        /// Destination file path for downloaded database
+        #[arg(long, default_value = "data/vuln-db.sqlite", value_name = "FILE")]
         output: String,
     },
-    /// Air-gapped bundle management (offline environments)
+    /// Create and verify self-contained air-gapped deployment bundles
     Bundle {
         #[command(subcommand)]
         action: BundleCommands,
     },
-    /// Template management (push/pull from configured storage backend)
+    /// Manage security templates (push/pull/list) with remote artifact storage
     Template {
         #[command(subcommand)]
         action: TemplateCommands,
     },
-    /// Compare two scan JSON output files to find new, resolved, or recurring vulnerabilities
+    /// Compare two scan result JSON files to identify new, resolved, or recurring vulnerabilities
     Diff {
-        /// The baseline JSON output file from an older scan
-        #[arg(long)]
+        /// Baseline scan result JSON file from an earlier run
+        #[arg(long, value_name = "FILE")]
         baseline: String,
-        /// The current JSON output file from a newer scan
-        #[arg(long)]
+        /// Current scan result JSON file from a newer run
+        #[arg(long, value_name = "FILE")]
         current: String,
     },
 }
 
 #[derive(clap::Subcommand, Debug, Clone)]
 pub enum PluginCommands {
-    /// Package a plugin directory into a .vpa archive
+    /// Package a plugin source directory into a distributable .vpa archive
     Package {
-        /// The directory containing the plugin source and plugin.yaml
+        /// Directory containing plugin source code and plugin.yaml manifest
+        #[arg(value_name = "DIR")]
         dir: String,
-        /// The output .vpa file path
-        #[arg(short, long)]
+        /// Output path for the packaged .vpa archive (e.g. dist/my-plugin.vpa)
+        #[arg(short, long, value_name = "FILE")]
         output: Option<String>,
-        /// Optional path to an ED25519 private key to sign the plugin (creates signature.sig)
-        #[arg(long)]
+        /// Path to ED25519 private key to cryptographically sign the package
+        #[arg(long, value_name = "KEY_FILE")]
         sign: Option<String>,
     },
-    /// Initialize a new plugin directory with boilerplate code
+    /// Scaffold a new plugin project with boilerplate code
     Init {
-        /// The name of the plugin
+        /// The name of the new plugin
         name: String,
-        /// The programming language to use (e.g. python, go)
-        #[arg(long, default_value = "python")]
+        /// Programming language to use for the plugin (python, go, rust)
+        #[arg(long, default_value = "python", value_name = "LANG")]
         lang: String,
-        /// The runtime to use (grpc or wasm)
-        #[arg(long, default_value = "grpc")]
+        /// Plugin execution runtime model (grpc or wasm)
+        #[arg(long, default_value = "grpc", value_name = "RUNTIME")]
         runtime: String,
     },
-    /// Generate a new ED25519 keypair for signing plugins
+    /// Generate a new ED25519 keypair for signing Valayam plugins
     GenerateKey {
-        /// The output path prefix for the generated keys (e.g., 'plugin_key' generates 'plugin_key.pem' and 'plugin_key.pub')
-        #[arg(short, long, default_value = "valayam_plugin_key")]
+        /// Output file path prefix for generated keypair (.pem and .pub)
+        #[arg(short, long, default_value = "valayam_plugin_key", value_name = "PREFIX")]
         output: String,
     },
-    /// Install a Wasm plugin from a remote URL
+    /// Install a WebAssembly (WASM) plugin from a remote URL or OCI registry
     Install {
-        /// The name of the plugin to cache it as
+        /// Registration name for the installed plugin
+        #[arg(value_name = "NAME")]
         name: String,
-        /// The remote URL to download the plugin from (supports http:// and oci://)
+        /// Remote source URL to download plugin from (supports https:// and oci://)
+        #[arg(value_name = "URL")]
         url: String,
-        /// Optional public key (hex) to verify the plugin signature
-        #[arg(long)]
+        /// ED25519 public key (hex string or PEM file) to verify plugin integrity
+        #[arg(long, value_name = "KEY")]
         pubkey: Option<String>,
     },
-    /// Push a packaged plugin to an OCI registry
+    /// Push a packaged .vpa plugin to an OCI artifact registry
     Push {
-        /// The path to the packaged .vpa plugin file
+        /// Path to the packaged .vpa plugin file
+        #[arg(value_name = "FILE")]
         file: String,
-        /// The OCI repository to push to (e.g., localhost:5000/my-plugin)
+        /// Destination OCI repository (e.g. registry.example.com/org/plugin)
+        #[arg(value_name = "REPO")]
         repo: String,
-        /// The tag for the OCI artifact (default: latest)
-        #[arg(short, long, default_value = "latest")]
+        /// OCI artifact tag (default: latest)
+        #[arg(short, long, default_value = "latest", value_name = "TAG")]
         tag: String,
-        /// Optional signature to attach to the OCI manifest
-        #[arg(long)]
+        /// Optional detached signature file (.sig) to attach to OCI manifest
+        #[arg(long, value_name = "SIG_FILE")]
         signature: Option<String>,
     },
-    /// Search for plugins on the Valayam Marketplace
+    /// Search for published plugins on the Valayam Marketplace
     Search {
-        /// The search query
+        /// Search keyword or tag
+        #[arg(value_name = "QUERY")]
         query: String,
     },
-    /// Publish a plugin to the Valayam Marketplace
+    /// Publish a packaged .vpa plugin to the Valayam Marketplace
     Publish {
-        /// The path to the packaged .vpa plugin file
+        /// Path to the packaged .vpa plugin file
+        #[arg(value_name = "FILE")]
         file: String,
     },
-    /// Uninstall a plugin
+    /// Uninstall a locally cached or registered plugin
     Uninstall {
-        /// The name of the plugin to uninstall
+        /// Name of the plugin to uninstall
+        #[arg(value_name = "NAME")]
         name: String,
     },
-    /// List installed plugins
+    /// List all locally installed and registered plugins
     List,
 }
 
 #[derive(clap::Subcommand, Debug, Clone)]
 pub enum BundleCommands {
-    /// Create an air-gapped bundle from local plugins + templates
+    /// Create an air-gapped bundle containing plugins, templates, and signature manifests
     Create {
         /// Directory containing plugin .vpa files
-        #[arg(long, default_value = "plugins")]
+        #[arg(long, default_value = "plugins", value_name = "DIR")]
         plugins: String,
-        /// Directory containing .yaml template files
-        #[arg(long, default_value = "templates")]
+        /// Directory containing YAML security templates
+        #[arg(long, default_value = "templates", value_name = "DIR")]
         templates: String,
-        /// Path to ED25519 public key (PEM) for manifest integrity verification
-        #[arg(long)]
+        /// Path to ED25519 public key (PEM) for bundle manifest verification
+        #[arg(long, value_name = "KEY_FILE")]
         pubkey: String,
-        /// Output bundle directory
-        #[arg(short, long, default_value = "./bundle")]
+        /// Destination directory path for the created offline bundle
+        #[arg(short, long, default_value = "./bundle", value_name = "DIR")]
         output: String,
     },
-    /// Verify a bundle's manifest.json hashes + signatures
+    /// Verify an air-gapped bundle's manifest checksums and cryptographic signatures
     Verify {
-        /// Path to the bundle directory
+        /// Path to bundle directory containing manifest.json
+        #[arg(value_name = "DIR")]
         bundle: String,
     },
 }
 
-/// Template management commands (push/pull to/from artifact store)
 #[derive(clap::Subcommand, Debug, Clone)]
 pub enum TemplateCommands {
-    /// Push a template directory or file to the configured storage backend
+    /// Push a local template file or directory to configured storage backend
     Push {
-        /// Local directory or file containing templates to push
+        /// Local YAML template file or directory to upload
+        #[arg(value_name = "PATH")]
         path: String,
-        /// Optional prefix/namespace for the template keys (default: templates/)
-        #[arg(long, default_value = "templates/")]
+        /// Storage prefix namespace (default: templates/)
+        #[arg(long, default_value = "templates/", value_name = "PREFIX")]
         prefix: String,
     },
-    /// Pull templates from the configured storage backend to local directory
+    /// Pull templates from configured storage backend to a local directory
     Pull {
-        /// Local directory to pull templates into
-        #[arg(long, default_value = "templates")]
+        /// Local destination directory to save downloaded templates
+        #[arg(long, default_value = "templates", value_name = "DIR")]
         output: String,
-        /// Optional prefix/namespace to pull from (default: templates/)
-        #[arg(long, default_value = "templates/")]
+        /// Storage prefix namespace to download from (default: templates/)
+        #[arg(long, default_value = "templates/", value_name = "PREFIX")]
         prefix: String,
     },
-    /// List templates in the configured storage backend
+    /// List templates available in the configured storage backend
     List {
-        /// Optional prefix/namespace to list (default: templates/)
-        #[arg(long, default_value = "templates/")]
+        /// Storage prefix namespace to filter (default: templates/)
+        #[arg(long, default_value = "templates/", value_name = "PREFIX")]
         prefix: String,
     },
 }

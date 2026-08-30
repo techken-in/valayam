@@ -60,8 +60,3 @@ valayam-state = { path = "../valayam-state" }
 valayam-reporter = { path = "../valayam-reporter" }
 valayam-proto = { path = "../valayam-proto" }
 valayam-api = { path = "../valayam-api" }
-
-[profile.release]
-opt-level = 3
-lto = "thin"
-codegen-units = 1

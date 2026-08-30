@@ -600,11 +600,17 @@ pub async fn run_scan_with_job_id(
     let mut reporters: Vec<Box<dyn Reporter>> = vec![Box::new(ConsoleReporter::default())];
     if let Some(ref path) = args.output {
         let scanner_version = env!("CARGO_PKG_VERSION").to_string();
-        if path.ends_with(".sarif") {
+        let fmt = args.format.to_lowercase();
+        let is_sarif = fmt == "sarif" || path.ends_with(".sarif");
+        let is_html = fmt == "html" || path.ends_with(".html");
+        let is_md = fmt == "markdown" || fmt == "md" || path.ends_with(".md");
+        let is_pdf = fmt == "pdf" || path.ends_with(".pdf");
+
+        if is_sarif {
             let sarif_reporter =
                 valayam_reporter::sarif::SarifReporter::new(path.to_string(), scanner_version)?;
             reporters.push(Box::new(sarif_reporter));
-        } else {
+        } else if !is_html && !is_md && !is_pdf {
             let plugins = registry.list_plugins();
             let templates = if use_master_template {
                 vec!["dynamic-master-scan".to_string()]
@@ -640,8 +646,10 @@ pub async fn run_scan_with_job_id(
     // ── 6. Spawn Consumer task with dedup and severity tracking ──
     let severity_counts = Arc::new(Mutex::new(SeverityCounts::default()));
     let dedup_count = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+    let collected_results = Arc::new(Mutex::new(Vec::new()));
     let severity_for_consumer = severity_counts.clone();
     let dedup_for_consumer = dedup_count.clone();
+    let collected_for_consumer = collected_results.clone();
     let spinner_for_consumer = spinner.clone();
 
     let consumer_handle = tokio::spawn(async move {
@@ -654,6 +662,12 @@ pub async fn run_scan_with_job_id(
             if !seen.insert(key) {
                 dedup_for_consumer.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                 continue;
+            }
+
+            // Collect structured scan result for report generators
+            {
+                let scan_res = valayam_core::core::scan_result_bridge::finding_to_scan_result(finding.clone().to_owned());
+                collected_for_consumer.lock().await.push(scan_res);
             }
 
             if let Some(ref tx) = tui_tx {
@@ -823,6 +837,24 @@ pub async fn run_scan_with_job_id(
 
     let _findings_count = consumer_handle.await.unwrap_or(0);
     spinner.finish_and_clear();
+
+    if let Some(ref path) = args.output {
+        let fmt = args.format.to_lowercase();
+        let results = collected_results.lock().await;
+        if fmt == "html" || path.ends_with(".html") {
+            if let Err(e) = crate::reporting::html::HtmlReporter::generate(&results, path) {
+                tracing::error!("Failed to generate HTML report at '{}': {}", path, e);
+            }
+        } else if fmt == "markdown" || fmt == "md" || path.ends_with(".md") {
+            if let Err(e) = crate::reporting::markdown::MarkdownReporter::generate(&results, path) {
+                tracing::error!("Failed to generate Markdown report at '{}': {}", path, e);
+            }
+        } else if fmt == "pdf" || path.ends_with(".pdf") {
+            if let Err(e) = crate::reporting::pdf::generate_pdf(&results, path) {
+                tracing::error!("Failed to generate PDF report at '{}': {}", path, e);
+            }
+        }
+    }
 
     tui_running.store(false, std::sync::atomic::Ordering::SeqCst);
     if let Some(handle) = tui_handle {

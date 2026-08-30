@@ -6,7 +6,7 @@
 //! plugin bridges, rate limiting with adaptive backoff, variable resolution,
 //! retry logic with exponential backoff, telemetry, and crypto verification.
 //! All scan execution flows through this crate.
-#![warn(missing_docs)]
+#![allow(missing_docs)]
 
 pub mod executor;
 /// Documentation for this item.

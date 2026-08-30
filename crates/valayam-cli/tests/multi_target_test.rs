@@ -13,7 +13,7 @@ fn test_cli_with_target_flag() {
 #[test]
 fn test_cli_with_template_flag() {
     let mut cmd = Command::cargo_bin("valayam-cli").unwrap();
-    cmd.args(["-t", "templates_repo/demo-template.yaml", "--help"])
+    cmd.args(["-t", "dummy-template.yaml", "--help"])
         .assert()
         .success();
 }

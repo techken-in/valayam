@@ -8,6 +8,7 @@ edition.workspace = true
 tokio-util = { version = "0.7", features = ["rt"] }
 tokio = { workspace = true }
 clap = { workspace = true }
+clap_complete = "4.5"
 walkdir.workspace = true
 valayam-core = { path = "../valayam-core" }
 valayam-core-net = { path = "../valayam-core-net" }

@@ -22,7 +22,13 @@ Thumbs.db
 !.env.example
 *.pem
 *.key
-*.sig
+*.priv
+keys/*.pem
+keys/*.key
+keys/*.priv
+!*.pub
+!keys/*.pub
+!keys/*.ed25519
 
 # ── Local Runtime & Scan State ────────────────────────────────
 .valayam_state/
