@@ -130,7 +130,11 @@ impl FindingOwned {
                     meta.insert("::reference".to_string(), value);
                 }
                 "tags" => {
-                    tags = value.split(',').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect();
+                    tags = value
+                        .split(',')
+                        .map(|s| s.trim().to_string())
+                        .filter(|s| !s.is_empty())
+                        .collect();
                 }
                 "protocol" => {
                     protocol = Some(value);
@@ -168,11 +172,7 @@ impl FindingOwned {
         target: impl Into<String>,
         matched_at: impl Into<String>,
     ) -> Self {
-        let tags = template_meta
-            .tags()
-            .iter()
-            .map(|s| s.to_string())
-            .collect();
+        let tags = template_meta.tags().iter().map(|s| s.to_string()).collect();
 
         Self {
             scan_id: uuid::Uuid::default(),

@@ -741,23 +741,23 @@ async fn handle_template_command(action: &cli::TemplateCommands) -> anyhow::Resu
 }
 
 async fn handle_diff_command(baseline: &str, current: &str) -> anyhow::Result<()> {
-    use std::fs;
     use colored::Colorize;
+    use std::fs;
     use valayam_diff::DiffReport;
     use valayam_models::finding::FindingOwned;
 
     tracing::info!("Running scan diff between {} and {}", baseline, current);
-    
+
     let base_content = fs::read_to_string(baseline)?;
     let curr_content = fs::read_to_string(current)?;
-    
+
     let mut base_findings = Vec::new();
     for line in base_content.lines() {
         if let Ok(f) = serde_json::from_str::<FindingOwned>(line) {
             base_findings.push(f);
         }
     }
-    
+
     let mut curr_findings = Vec::new();
     for line in curr_content.lines() {
         if let Ok(f) = serde_json::from_str::<FindingOwned>(line) {
@@ -772,14 +772,22 @@ async fn handle_diff_command(baseline: &str, current: &str) -> anyhow::Result<()
     for f in &report.new {
         println!("  {} ({})", f.template_name, f.target);
     }
-    
-    println!("{} Resolved Findings: {}", "[-]".green().bold(), report.resolved.len());
+
+    println!(
+        "{} Resolved Findings: {}",
+        "[-]".green().bold(),
+        report.resolved.len()
+    );
     for f in &report.resolved {
         println!("  {} ({})", f.template_name, f.target);
     }
-    
-    println!("{} Recurring Findings: {}", "[~]".yellow().bold(), report.recurring.len());
-    
+
+    println!(
+        "{} Recurring Findings: {}",
+        "[~]".yellow().bold(),
+        report.recurring.len()
+    );
+
     Ok(())
 }
 

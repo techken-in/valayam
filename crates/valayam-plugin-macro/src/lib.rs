@@ -3,7 +3,7 @@ use quote::quote;
 use syn::{parse_macro_input, DeriveInput};
 
 /// Automatically generates a JSON schema for a Valayam WASM plugin configuration.
-/// 
+///
 /// When this macro is applied to a configuration struct, it derives `schemars::JsonSchema`
 /// and provides an `export_schema()` function that returns the serialized JSON Schema.
 #[proc_macro_derive(ValayamConfig)]

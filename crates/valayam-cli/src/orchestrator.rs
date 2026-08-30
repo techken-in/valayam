@@ -326,7 +326,11 @@ pub async fn run_scan_with_job_id(
                 snapshot.pending_tasks.len()
             );
         });
-        actual_targets = snapshot.pending_tasks.iter().map(|(t, _)| t.clone()).collect();
+        actual_targets = snapshot
+            .pending_tasks
+            .iter()
+            .map(|(t, _)| t.clone())
+            .collect();
         actual_targets.sort();
         actual_targets.dedup();
         for (t, tmpl) in snapshot.completed_tasks {
@@ -399,7 +403,7 @@ pub async fn run_scan_with_job_id(
     tokio::spawn(async move {
         if tokio::signal::ctrl_c().await.is_ok() {
             tracing::warn!("received Ctrl+C, initiating graceful shutdown...");
-            
+
             let mut pending_tasks = Vec::new();
             for target in &pending_for_shutdown {
                 for file_path in &template_files_for_shutdown {
@@ -411,7 +415,13 @@ pub async fn run_scan_with_job_id(
             }
             let completed_tasks: Vec<_> = completed_tasks_for_shutdown.into_iter().collect();
 
-            let _ = db.save_state(&state_id, &pending_tasks, &completed_tasks, 0, std::collections::HashMap::new());
+            let _ = db.save_state(
+                &state_id,
+                &pending_tasks,
+                &completed_tasks,
+                0,
+                std::collections::HashMap::new(),
+            );
             cancel_for_handler.cancel();
         }
     });
@@ -484,9 +494,15 @@ pub async fn run_scan_with_job_id(
         // Core protocols
         reg.register(HttpScanPlugin::new(http_client.clone()));
         reg.register(valayam_core::core::plugins::WebsocketScanPlugin::new());
-        reg.register(valayam_core::core::plugins::GraphqlAuditPlugin::new(http_client.clone()));
-        reg.register(valayam_core::core::plugins::GrpcAuditPlugin::new(http_client.clone()));
-        reg.register(valayam_core::core::plugins::AuthLogicPlugin::new(http_client.clone()));
+        reg.register(valayam_core::core::plugins::GraphqlAuditPlugin::new(
+            http_client.clone(),
+        ));
+        reg.register(valayam_core::core::plugins::GrpcAuditPlugin::new(
+            http_client.clone(),
+        ));
+        reg.register(valayam_core::core::plugins::AuthLogicPlugin::new(
+            http_client.clone(),
+        ));
         reg.register(valayam_core::core::plugins::SubdomainTakeoverPlugin::new());
         // Scripting and Fuzzer moved to Wasm
         // Cloud & Extended moved to Wasm
@@ -657,7 +673,7 @@ pub async fn run_scan_with_job_id(
     if let Some(rx) = state_rx_to_use {
         executor = executor.with_state_rx(rx);
     }
-    
+
     // Globally bound concurrent execution in the core engine
     executor = executor.with_concurrency_limit(args.concurrency);
 

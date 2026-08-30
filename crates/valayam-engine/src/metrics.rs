@@ -5,8 +5,8 @@
 //! for the `/metrics` endpoint.
 
 use prometheus::{
-    register_counter_vec, register_gauge, register_gauge_vec, register_histogram, register_histogram_vec,
-    CounterVec, Gauge, GaugeVec, Histogram, HistogramVec,
+    register_counter_vec, register_gauge, register_gauge_vec, register_histogram,
+    register_histogram_vec, CounterVec, Gauge, GaugeVec, Histogram, HistogramVec,
 };
 
 // ── Plugin execution ─────────────────────────────────────────────────────────

@@ -21,9 +21,9 @@ use serde_json::{json, Value};
 use tokio::process::Command as TokioCommand;
 use tracing::info;
 
+use tonic::transport::{Certificate, Channel, ClientTlsConfig, Identity};
 use valayam_models::FindingOwned;
 use valayam_proto::valayam::{scanner_client::ScannerClient, ScanRequest, TelemetryEvent};
-use tonic::transport::{Certificate, Channel, ClientTlsConfig, Identity};
 
 // =============================================================================
 // Config
@@ -45,9 +45,19 @@ struct McpConfig {
     cli_binary: String,
 }
 
-fn default_grpc() -> String { "http://localhost:50051".into() }
-fn default_valayam_home() -> String { dirs::home_dir().unwrap_or_default().join(".valayam").to_string_lossy().into() }
-fn default_cli_bin() -> String { "valayam".into() }
+fn default_grpc() -> String {
+    "http://localhost:50051".into()
+}
+fn default_valayam_home() -> String {
+    dirs::home_dir()
+        .unwrap_or_default()
+        .join(".valayam")
+        .to_string_lossy()
+        .into()
+}
+fn default_cli_bin() -> String {
+    "valayam".into()
+}
 
 #[derive(Parser, Debug)]
 #[command(name = "valayam-mcp")]
@@ -96,7 +106,9 @@ impl ValayamState {
     }
 
     fn get_or_create_client(&self) -> Result<ScannerClient<Channel>> {
-        self.grpc_client.clone().ok_or_else(|| anyhow!("gRPC client not available - check endpoint config"))
+        self.grpc_client
+            .clone()
+            .ok_or_else(|| anyhow!("gRPC client not available - check endpoint config"))
     }
 }
 
@@ -198,18 +210,66 @@ impl ValayamMcp {
 
     fn tools() -> Vec<Tool> {
         vec![
-            Tool::new("run_scan", "Run a security scan via CLI", Self::schema::<RunScanInput>()),
-            Tool::new("list_templates", "List available vulnerability templates", Self::schema::<ListTemplatesInput>()),
-            Tool::new("get_template", "Get a specific template by name", Self::schema::<GetTemplateInput>()),
-            Tool::new("grpc_scan", "Run scan via gRPC API", Self::schema::<GrpcScanInput>()),
-            Tool::new("grpc_telemetry", "Send telemetry event via gRPC", Self::schema::<GrpcTelemetryInput>()),
-            Tool::new("list_plugins", "List available plugins", Self::schema::<ListPluginsInput>()),
-            Tool::new("generate_report", "Generate scan report", Self::schema::<GenerateReportInput>()),
-            Tool::new("config_get", "Get configuration value", Self::schema::<ConfigGetInput>()),
-            Tool::new("config_set", "Set configuration value", Self::schema::<ConfigSetInput>()),
-            Tool::new("project_init", "Initialize a new scan project", Self::schema::<ProjectInitInput>()),
-            Tool::new("list_agents", "List eBPF agents", Self::schema::<ListPluginsInput>()),
-            Tool::new("health_check", "Check gRPC/API health", Self::schema::<ListPluginsInput>()),
+            Tool::new(
+                "run_scan",
+                "Run a security scan via CLI",
+                Self::schema::<RunScanInput>(),
+            ),
+            Tool::new(
+                "list_templates",
+                "List available vulnerability templates",
+                Self::schema::<ListTemplatesInput>(),
+            ),
+            Tool::new(
+                "get_template",
+                "Get a specific template by name",
+                Self::schema::<GetTemplateInput>(),
+            ),
+            Tool::new(
+                "grpc_scan",
+                "Run scan via gRPC API",
+                Self::schema::<GrpcScanInput>(),
+            ),
+            Tool::new(
+                "grpc_telemetry",
+                "Send telemetry event via gRPC",
+                Self::schema::<GrpcTelemetryInput>(),
+            ),
+            Tool::new(
+                "list_plugins",
+                "List available plugins",
+                Self::schema::<ListPluginsInput>(),
+            ),
+            Tool::new(
+                "generate_report",
+                "Generate scan report",
+                Self::schema::<GenerateReportInput>(),
+            ),
+            Tool::new(
+                "config_get",
+                "Get configuration value",
+                Self::schema::<ConfigGetInput>(),
+            ),
+            Tool::new(
+                "config_set",
+                "Set configuration value",
+                Self::schema::<ConfigSetInput>(),
+            ),
+            Tool::new(
+                "project_init",
+                "Initialize a new scan project",
+                Self::schema::<ProjectInitInput>(),
+            ),
+            Tool::new(
+                "list_agents",
+                "List eBPF agents",
+                Self::schema::<ListPluginsInput>(),
+            ),
+            Tool::new(
+                "health_check",
+                "Check gRPC/API health",
+                Self::schema::<ListPluginsInput>(),
+            ),
         ]
     }
 
@@ -259,18 +319,31 @@ impl ValayamMcp {
             let mut entries = tokio::fs::read_dir(&template_dir).await?;
             while let Some(entry) = entries.next_entry().await? {
                 let path = entry.path();
-                if path.extension().and_then(|s| s.to_str()) == Some("yaml") ||
-                   path.extension().and_then(|s| s.to_str()) == Some("yml") {
+                if path.extension().and_then(|s| s.to_str()) == Some("yaml")
+                    || path.extension().and_then(|s| s.to_str()) == Some("yml")
+                {
                     let content = tokio::fs::read_to_string(&path).await?;
                     if let Ok(template) = serde_yaml::from_str::<serde_yaml::Value>(&content) {
-                        let name = template.get("info").and_then(|i| i.get("name")).and_then(|n| n.as_str()).unwrap_or("unknown");
-                        let category = template.get("info").and_then(|i| i.get("category")).and_then(|c| c.as_str());
-                        let tags = template.get("info").and_then(|i| i.get("tags")).and_then(|t| t.as_sequence()).map(|s| {
-                            s.iter().filter_map(|v| v.as_str()).collect::<Vec<_>>()
-                        }).unwrap_or_default();
+                        let name = template
+                            .get("info")
+                            .and_then(|i| i.get("name"))
+                            .and_then(|n| n.as_str())
+                            .unwrap_or("unknown");
+                        let category = template
+                            .get("info")
+                            .and_then(|i| i.get("category"))
+                            .and_then(|c| c.as_str());
+                        let tags = template
+                            .get("info")
+                            .and_then(|i| i.get("tags"))
+                            .and_then(|t| t.as_sequence())
+                            .map(|s| s.iter().filter_map(|v| v.as_str()).collect::<Vec<_>>())
+                            .unwrap_or_default();
 
                         if input.category.as_deref() == category || input.category.is_none() {
-                            if input.tags.is_empty() || input.tags.iter().any(|t| tags.contains(&t.as_str())) {
+                            if input.tags.is_empty()
+                                || input.tags.iter().any(|t| tags.contains(&t.as_str()))
+                            {
                                 templates.push(json!({
                                     "name": name,
                                     "file": path.file_name().unwrap().to_string_lossy(),
@@ -284,7 +357,9 @@ impl ValayamMcp {
             }
         }
 
-        Ok(CallToolResult::success(vec![Content::json(json!({ "templates": templates }))?]))
+        Ok(CallToolResult::success(vec![Content::json(
+            json!({ "templates": templates }),
+        )?]))
     }
 
     async fn get_template(&self, input: GetTemplateInput) -> Result<CallToolResult> {
@@ -313,8 +388,7 @@ impl ValayamMcp {
             template_yaml: input.template_yaml,
         };
 
-        let response = client.scan(request).await?
-            .into_inner();
+        let response = client.scan(request).await?.into_inner();
 
         Ok(CallToolResult::success(vec![Content::json(json!({
             "findings": response.findings_json,
@@ -331,8 +405,7 @@ impl ValayamMcp {
 
         // stream_telemetry expects a stream of TelemetryEvent, not Result<TelemetryEvent, _>
         let stream = tokio_stream::iter(vec![event]);
-        let response = client.stream_telemetry(stream).await?
-            .into_inner();
+        let response = client.stream_telemetry(stream).await?.into_inner();
 
         Ok(CallToolResult::success(vec![Content::json(json!({
             "received": response.received,
@@ -363,7 +436,9 @@ impl ValayamMcp {
         plugins.push(json!({ "name": "tls", "type": "builtin" }));
         plugins.push(json!({ "name": "ssh", "type": "builtin" }));
 
-        Ok(CallToolResult::success(vec![Content::json(json!({ "plugins": plugins }))?]))
+        Ok(CallToolResult::success(vec![Content::json(
+            json!({ "plugins": plugins }),
+        )?]))
     }
 
     async fn generate_report(&self, input: GenerateReportInput) -> Result<CallToolResult> {
@@ -389,7 +464,8 @@ impl ValayamMcp {
     }
 
     fn generate_html_report(findings: &[FindingOwned]) -> Result<String> {
-        let mut html = String::from(r#"
+        let mut html = String::from(
+            r#"
 <!DOCTYPE html>
 <html>
 <head><title>Valayam Scan Report</title>
@@ -406,13 +482,15 @@ body { font-family: system-ui; max-width: 1200px; margin: 0 auto; padding: 20px;
 </head>
 <body>
 <h1>Valayam Security Scan Report</h1>
-<p>Generated: "#);
+<p>Generated: "#,
+        );
         html.push_str(&Utc::now().to_rfc3339());
         html.push_str("</p>\n");
 
         for f in findings {
             let severity = f.severity.to_string().to_lowercase();
-            html.push_str(&format!(r#"
+            html.push_str(&format!(
+                r#"
 <div class="finding {severity}">
     <h3>{} <span class="severity {severity}">{severity}</span></h3>
     <p><strong>Template:</strong> {} (ID: {})</p>
@@ -438,12 +516,16 @@ body { font-family: system-ui; max-width: 1200px; margin: 0 auto; padding: 20px;
     async fn config_get(&self, input: ConfigGetInput) -> Result<CallToolResult> {
         let config_path = PathBuf::from(&self.state.cfg.valayam_home).join("config.toml");
         if !config_path.exists() {
-            return Ok(CallToolResult::success(vec![Content::json(json!({ "value": null }))?]));
+            return Ok(CallToolResult::success(vec![Content::json(
+                json!({ "value": null }),
+            )?]));
         }
         let content = tokio::fs::read_to_string(&config_path).await?;
         let config: Value = toml::from_str(&content)?;
         let value = config.get(&input.key).cloned().unwrap_or(Value::Null);
-        Ok(CallToolResult::success(vec![Content::json(json!({ "key": input.key, "value": value }))?]))
+        Ok(CallToolResult::success(vec![Content::json(
+            json!({ "key": input.key, "value": value }),
+        )?]))
     }
 
     async fn config_set(&self, input: ConfigSetInput) -> Result<CallToolResult> {
@@ -460,7 +542,9 @@ body { font-family: system-ui; max-width: 1200px; margin: 0 auto; padding: 20px;
         }
 
         tokio::fs::write(&config_path, toml::to_string(&config)?).await?;
-        Ok(CallToolResult::success(vec![Content::json(json!({ "ok": true }))?]))
+        Ok(CallToolResult::success(vec![Content::json(
+            json!({ "ok": true }),
+        )?]))
     }
 
     async fn project_init(&self, input: ProjectInitInput) -> Result<CallToolResult> {
@@ -472,22 +556,31 @@ body { font-family: system-ui; max-width: 1200px; margin: 0 auto; padding: 20px;
         let templates_dir = project_dir.join("templates");
         tokio::fs::create_dir_all(&templates_dir).await?;
 
-        let config_content = format!(r#"
+        let config_content = format!(
+            r#"
 [project]
 name = "{}"
 version = "0.1.0"
 
 [scan]
 default_rate_limit = 100
-"#, input.name);
+"#,
+            input.name
+        );
         tokio::fs::write(project_dir.join("valayam.toml"), config_content).await?;
 
         // If template specified, copy it
         if let Some(template_name) = input.template {
-            let src = PathBuf::from(&self.state.cfg.valayam_home).join("templates").join(format!("{}.yaml", template_name));
+            let src = PathBuf::from(&self.state.cfg.valayam_home)
+                .join("templates")
+                .join(format!("{}.yaml", template_name));
             if src.exists() {
                 let content = tokio::fs::read_to_string(&src).await?;
-                tokio::fs::write(templates_dir.join(format!("{}.yaml", template_name)), content).await?;
+                tokio::fs::write(
+                    templates_dir.join(format!("{}.yaml", template_name)),
+                    content,
+                )
+                .await?;
             }
         }
 
@@ -631,7 +724,12 @@ impl ServerHandler for ValayamMcp {
                     .map_err(|e| rmcp::Error::invalid_params(e.to_string(), None))?;
                 self.health_check(input).await
             }
-            _ => return Err(rmcp::Error::invalid_params(format!("unknown tool: {}", request.name), None)),
+            _ => {
+                return Err(rmcp::Error::invalid_params(
+                    format!("unknown tool: {}", request.name),
+                    None,
+                ))
+            }
         };
 
         result.map_err(|e| rmcp::Error::internal_error(e.to_string(), None))
@@ -650,7 +748,8 @@ async fn main() -> Result<()> {
 
     let args = Args::parse();
 
-    let config_str = tokio::fs::read_to_string(&args.config).await
+    let config_str = tokio::fs::read_to_string(&args.config)
+        .await
         .context("reading mcp.toml")?;
     let cfg: McpConfig = toml::from_str(&config_str).context("parsing mcp.toml")?;
 

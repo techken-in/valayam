@@ -1,15 +1,17 @@
 use std::sync::Arc;
-use valayam_core::core::plugins::{AuthLogicPlugin, HttpScanPlugin, SubdomainTakeoverPlugin, WebsocketScanPlugin};
+use tokio::sync::mpsc;
+use valayam_core::core::plugins::{
+    AuthLogicPlugin, HttpScanPlugin, SubdomainTakeoverPlugin, WebsocketScanPlugin,
+};
 use valayam_core::network::http::StealthHttpClient;
 use valayam_engine::executor::ScanExecutor;
 use valayam_engine::registry::PluginRegistry;
-use tokio::sync::mpsc;
 use valayam_engine::traits::FindingOwned;
 
 #[tokio::test]
 async fn test_comprehensive_engine_pipeline() {
     let (tx, mut rx) = mpsc::channel::<FindingOwned>(10);
-    
+
     // 1. Init stealth client (HTTP/2 + HTTP/3 multiplexing ready)
     let client = Arc::new(StealthHttpClient::new(false, false, None, false).unwrap());
 
@@ -35,5 +37,8 @@ async fn test_comprehensive_engine_pipeline() {
     // For this e2e mock, we just verify the registry setup succeeds
     // without crashes, proving the plugins satisfy the Engine Plugin API.
 
-    assert!(true, "Engine successfully bootstrapped with Phase 3 plugins");
+    assert!(
+        true,
+        "Engine successfully bootstrapped with Phase 3 plugins"
+    );
 }

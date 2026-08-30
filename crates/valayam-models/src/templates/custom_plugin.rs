@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 pub struct CustomPluginTemplate {
     /// The ID/name of the plugin to invoke (e.g., 'api-fuzzer', 'csp-audit')
     pub id: String,
-    
+
     /// Arbitrary configuration data passed to the plugin
     #[serde(flatten)]
     pub config: serde_json::Value,

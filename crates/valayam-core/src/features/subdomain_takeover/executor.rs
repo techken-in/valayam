@@ -1,13 +1,10 @@
+use hickory_resolver::config::*;
+use hickory_resolver::TokioAsyncResolver;
+use std::collections::HashMap;
 use valayam_models::{
     finding::FindingOwned,
-    templates::{
-        schema::TemplateMetadata,
-        subdomain_takeover::SubdomainTakeoverTemplate,
-    },
+    templates::{schema::TemplateMetadata, subdomain_takeover::SubdomainTakeoverTemplate},
 };
-use hickory_resolver::TokioAsyncResolver;
-use hickory_resolver::config::*;
-use std::collections::HashMap;
 
 pub async fn execute(
     target: &str,
@@ -38,13 +35,19 @@ pub async fn execute(
     if let Ok(_response) = resolver.lookup_ip(&target_domain).await {
         // IP resolution check — used to confirm host resolves before CNAME takeover analysis.
     }
-    
+
     // We already have some DNS code in network::dns. Let's use hickory_resolver directly here to look up CNAMEs.
-    if let Ok(cname_response) = resolver.lookup(target_domain.clone(), hickory_resolver::proto::rr::RecordType::CNAME).await {
+    if let Ok(cname_response) = resolver
+        .lookup(
+            target_domain.clone(),
+            hickory_resolver::proto::rr::RecordType::CNAME,
+        )
+        .await
+    {
         for record in cname_response.iter() {
             if let Some(cname) = record.as_cname() {
                 let target_cname = cname.0.to_string().trim_end_matches('.').to_string();
-                
+
                 // Compare with template target
                 if target_cname.contains(&subdomain_config.target) {
                     let mut f = FindingOwned::from_template_and_info(
@@ -56,7 +59,7 @@ pub async fn execute(
                     f.protocol = Some("dns".to_string());
                     f.evidence_request = Some(format!("dig CNAME {}", target_domain));
                     f.evidence_response = Some(format!("CNAME {}", target_cname));
-                    
+
                     findings.push(f);
                 }
             }

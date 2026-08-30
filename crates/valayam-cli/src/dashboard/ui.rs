@@ -34,7 +34,10 @@ impl App {
     }
 }
 
-pub async fn run_dashboard(mut finding_rx: mpsc::Receiver<FindingOwned>, is_running: Arc<AtomicBool>) -> Result<()> {
+pub async fn run_dashboard(
+    mut finding_rx: mpsc::Receiver<FindingOwned>,
+    is_running: Arc<AtomicBool>,
+) -> Result<()> {
     enable_raw_mode()?;
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
@@ -79,21 +82,18 @@ fn run_ui(f: &mut ratatui::Frame, app: &App) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(1)
-        .constraints(
-            [
-                Constraint::Length(3),
-                Constraint::Min(0),
-            ]
-            .as_ref(),
-        )
+        .constraints([Constraint::Length(3), Constraint::Min(0)].as_ref())
         .split(f.area());
 
-    let title = Paragraph::new(vec![
-        Line::from(vec![
-            Span::styled("Valayam Interactive Dashboard", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
-            Span::raw(" (Press 'q' to exit)"),
-        ]),
-    ])
+    let title = Paragraph::new(vec![Line::from(vec![
+        Span::styled(
+            "Valayam Interactive Dashboard",
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        ),
+        Span::raw(" (Press 'q' to exit)"),
+    ])])
     .block(Block::default().borders(Borders::ALL));
     f.render_widget(title, chunks[0]);
 

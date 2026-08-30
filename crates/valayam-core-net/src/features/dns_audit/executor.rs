@@ -64,7 +64,8 @@ pub async fn execute(
                                     ),
                                 );
                                 finding.protocol = Some("dns".to_string());
-                                finding.evidence_request = Some(format!("{} {}", rule.query_type, domain));
+                                finding.evidence_request =
+                                    Some(format!("{} {}", rule.query_type, domain));
                                 finding.evidence_response = Some(records_text.clone());
                                 findings.push(finding);
                             }
@@ -108,8 +109,10 @@ pub async fn execute(
                                     format!("DNS Rebinding vulnerability detected: IP shifted from {} to private IP {}", first_ip, second_ip),
                                 );
                                 finding.protocol = Some("dns".to_string());
-                                finding.evidence_request = Some(format!("A {} (Rebinding Check)", domain));
-                                finding.evidence_response = Some(format!("first: {}\nsecond: {}", first_ip, second_ip));
+                                finding.evidence_request =
+                                    Some(format!("A {} (Rebinding Check)", domain));
+                                finding.evidence_response =
+                                    Some(format!("first: {}\nsecond: {}", first_ip, second_ip));
                                 findings.push(finding);
                             }
                         }

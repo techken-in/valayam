@@ -289,7 +289,7 @@ pub async fn execute(
                 );
 
                 finding.protocol = Some("http".to_string());
-                
+
                 let mut raw_req = format!("{} {}\n", req_rule.method, full_url);
                 if let Some(headers) = &resolved_headers {
                     for (k, v) in headers {
@@ -308,7 +308,7 @@ pub async fn execute(
                 } else {
                     evidence_body.into_owned()
                 };
-                
+
                 let mut raw_resp = format!("HTTP/1.1 {}\n", status);
                 for (k, v) in &resp_headers {
                     raw_resp.push_str(&format!("{}: {}\n", k, v));

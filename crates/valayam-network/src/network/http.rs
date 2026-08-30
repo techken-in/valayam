@@ -272,7 +272,15 @@ impl StealthHttpClient {
         follow_redirects: Option<bool>,
         timeout_override: Option<Duration>,
     ) -> Result<reqwest::Response, ScannerError> {
-        self.send_request_inner(method, url, headers, body.map(|s| s.as_bytes().to_vec()), follow_redirects, timeout_override).await
+        self.send_request_inner(
+            method,
+            url,
+            headers,
+            body.map(|s| s.as_bytes().to_vec()),
+            follow_redirects,
+            timeout_override,
+        )
+        .await
     }
 
     /// Send an HTTP request with stealth enhancements, accepting binary body.
@@ -285,7 +293,15 @@ impl StealthHttpClient {
         follow_redirects: Option<bool>,
         timeout_override: Option<Duration>,
     ) -> Result<reqwest::Response, ScannerError> {
-        self.send_request_inner(method, url, headers, body, follow_redirects, timeout_override).await
+        self.send_request_inner(
+            method,
+            url,
+            headers,
+            body,
+            follow_redirects,
+            timeout_override,
+        )
+        .await
     }
 
     async fn send_request_inner(

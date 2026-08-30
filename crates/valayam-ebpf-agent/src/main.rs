@@ -6,12 +6,7 @@ use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream;
 
 #[cfg(target_os = "linux")]
-use aya::{
-    programs::TracePoint,
-    maps::perf::AsyncPerfEventArray,
-    util::online_cpus,
-    Ebpf,
-};
+use aya::{maps::perf::AsyncPerfEventArray, programs::TracePoint, util::online_cpus, Ebpf};
 #[cfg(target_os = "linux")]
 use bytes::BytesMut;
 use std::time::Duration;
@@ -41,11 +36,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(target_os = "linux")]
     {
         println!("[*] Loading eBPF programs...");
-        
+
         // This bytecode will be loaded at runtime.
         // In a production environment, include_bytes_aligned! would be used.
-        let mut bpf = Ebpf::load_file("valayam-ebpf-agent-ebpf/target/bpfel-unknown-none/debug/valayam-ebpf-agent-ebpf")?;
-        
+        let mut bpf = Ebpf::load_file(
+            "valayam-ebpf-agent-ebpf/target/bpfel-unknown-none/debug/valayam-ebpf-agent-ebpf",
+        )?;
+
         let program: &mut TracePoint = bpf.program_mut("sys_enter_execve").unwrap().try_into()?;
         program.load()?;
         program.attach("syscalls", "sys_enter_execve")?;
@@ -66,18 +63,29 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     for buf in buffers.iter_mut().take(events.read) {
                         let ptr = buf.as_ptr() as *const ProcessEvent;
                         let data = unsafe { ptr.read_unaligned() };
-                        
-                        let comm = String::from_utf8_lossy(&data.comm).trim_matches(char::from(0)).to_string();
-                        let filename = String::from_utf8_lossy(&data.filename).trim_matches(char::from(0)).to_string();
-                        
-                        println!("[eBPF] Process Executed: {} (PID: {}) -> {}", comm, data.pid, filename);
-                        
+
+                        let comm = String::from_utf8_lossy(&data.comm)
+                            .trim_matches(char::from(0))
+                            .to_string();
+                        let filename = String::from_utf8_lossy(&data.filename)
+                            .trim_matches(char::from(0))
+                            .to_string();
+
+                        println!(
+                            "[eBPF] Process Executed: {} (PID: {}) -> {}",
+                            comm, data.pid, filename
+                        );
+
                         // We would send this over gRPC!
                         let pb_event = crate::grpc::valayam::TelemetryData {
                             node_id: "ebpf-node-1".to_string(),
                             timestamp: chrono::Utc::now().timestamp(),
                             event_type: "ProcessExecution".to_string(),
-                            payload: format!("PID: {}, CMD: {}, FILE: {}", data.pid, comm, filename).into_bytes(),
+                            payload: format!(
+                                "PID: {}, CMD: {}, FILE: {}",
+                                data.pid, comm, filename
+                            )
+                            .into_bytes(),
                         };
                         let _ = tx.send(pb_event).await;
                     }
@@ -100,4 +108,3 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
-

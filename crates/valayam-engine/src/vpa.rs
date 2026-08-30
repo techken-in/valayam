@@ -41,20 +41,20 @@ pub struct PluginManifest {
     pub runtime: String, // "grpc", "wasm"
     pub language: String,
     pub entrypoint: String,
-    
+
     // v2 fields
     #[serde(default = "default_api_version")]
     pub api_version: String,
-    
+
     #[serde(default)]
     pub capabilities: Vec<PluginCapability>,
-    
+
     #[serde(default)]
     pub dependencies: Vec<PluginDependency>,
-    
+
     #[serde(default)]
     pub inputs: Vec<PluginInput>,
-    
+
     #[serde(default)]
     pub outputs: Vec<PluginOutput>,
 }

@@ -400,10 +400,15 @@ pub async fn execute(
                 format!("Sensitive services detected: {}", all_findings.join("; ")),
             );
             finding.protocol = Some("tcp".to_string());
-            finding.evidence_request = Some(format!("TCP Scan on ports: {}", ports_to_scan.join(", ")));
+            finding.evidence_request =
+                Some(format!("TCP Scan on ports: {}", ports_to_scan.join(", ")));
             let banners: Vec<String> = port_results
                 .iter()
-                .filter_map(|p| p.banner.as_deref().map(|b| format!("Port {}: {}", p.port, b)))
+                .filter_map(|p| {
+                    p.banner
+                        .as_deref()
+                        .map(|b| format!("Port {}: {}", p.port, b))
+                })
                 .collect();
             if !banners.is_empty() {
                 finding.evidence_response = Some(banners.join("\n"));

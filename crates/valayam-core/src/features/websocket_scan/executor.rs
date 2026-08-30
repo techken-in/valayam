@@ -1,14 +1,11 @@
-use valayam_models::{
-    finding::FindingOwned,
-    templates::{
-        schema::TemplateMetadata,
-        websocket::WebsocketTemplate,
-    },
-};
+use futures_util::{SinkExt, StreamExt};
 use std::collections::HashMap;
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
-use futures_util::{SinkExt, StreamExt};
 use url::Url;
+use valayam_models::{
+    finding::FindingOwned,
+    templates::{schema::TemplateMetadata, websocket::WebsocketTemplate},
+};
 
 pub async fn execute(
     target: &str,
@@ -53,7 +50,7 @@ pub async fn execute(
                 for (k, v) in vars.iter() {
                     payload = payload.replace(&format!("{{{{{}}}}}", k), v);
                 }
-                
+
                 if let Err(_) = ws_stream.send(Message::Text(payload.clone().into())).await {
                     continue;
                 }
@@ -61,17 +58,18 @@ pub async fn execute(
                 raw_req.push('\n');
 
                 // Wait for response with timeout
-                if let Ok(Some(Ok(msg))) = tokio::time::timeout(
-                    std::time::Duration::from_secs(5),
-                    ws_stream.next(),
-                ).await {
+                if let Ok(Some(Ok(msg))) =
+                    tokio::time::timeout(std::time::Duration::from_secs(5), ws_stream.next()).await
+                {
                     let text = msg.to_string();
                     evidence_str.push_str(&text);
                     evidence_str.push('\n');
 
                     // Check matchers
                     for matcher in &section.matchers {
-                        if matcher.r#type == "word" && matcher.words.iter().any(|w| text.contains(w)) {
+                        if matcher.r#type == "word"
+                            && matcher.words.iter().any(|w| text.contains(w))
+                        {
                             matched = true;
                         }
                     }
@@ -83,7 +81,10 @@ pub async fn execute(
                                 if let Ok(re) = regex::Regex::new(pattern) {
                                     if let Some(caps) = re.captures(&text) {
                                         if let Some(m) = caps.get(extractor.group) {
-                                            vars.insert(extractor.name.clone(), m.as_str().to_string());
+                                            vars.insert(
+                                                extractor.name.clone(),
+                                                m.as_str().to_string(),
+                                            );
                                         }
                                     }
                                 }
@@ -105,7 +106,7 @@ pub async fn execute(
                 f.evidence_response = Some(evidence_str);
                 findings.push(f);
             }
-            
+
             let _ = ws_stream.close(None).await;
         }
     }

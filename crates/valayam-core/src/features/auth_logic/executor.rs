@@ -1,12 +1,12 @@
+use crate::network::http::StealthHttpClient;
+use std::collections::HashMap;
 use valayam_models::{
     finding::FindingOwned,
     templates::{
-        schema::TemplateMetadata,
         auth_logic::{AuthTemplate, LogicTemplate},
+        schema::TemplateMetadata,
     },
 };
-use crate::network::http::StealthHttpClient;
-use std::collections::HashMap;
 
 pub async fn execute(
     client: &StealthHttpClient,
@@ -50,17 +50,35 @@ pub async fn execute(
                     format!("{}{}", target.trim_end_matches('/'), path)
                 };
 
-                if let Ok(resp) = client.send_request(&logic.method, &url, Some(&secondary_headers), None, Some(true), None).await {
+                if let Ok(resp) = client
+                    .send_request(
+                        &logic.method,
+                        &url,
+                        Some(&secondary_headers),
+                        None,
+                        Some(true),
+                        None,
+                    )
+                    .await
+                {
                     let status = resp.status().as_u16();
                     if let Ok(body_bytes) = resp.bytes().await {
                         let text = String::from_utf8_lossy(&body_bytes);
-                        
+
                         let mut matched = false;
                         for matcher in &logic.matchers {
-                            if matcher.r#type == "status" && matcher.status.as_ref().map(|s| s.contains(&status)).unwrap_or(false) {
+                            if matcher.r#type == "status"
+                                && matcher
+                                    .status
+                                    .as_ref()
+                                    .map(|s| s.contains(&status))
+                                    .unwrap_or(false)
+                            {
                                 matched = true;
                             }
-                            if matcher.r#type == "word" && matcher.words.iter().any(|w| text.contains(w)) {
+                            if matcher.r#type == "word"
+                                && matcher.words.iter().any(|w| text.contains(w))
+                            {
                                 matched = true;
                             }
                         }
@@ -73,11 +91,14 @@ pub async fn execute(
                                 url.clone(),
                             );
                             f.protocol = Some("http".to_string());
-                            let evidence_req = format!("{} {} HTTP/1.1\nSecondary-Auth-Used: true", logic.method, url);
+                            let evidence_req = format!(
+                                "{} {} HTTP/1.1\nSecondary-Auth-Used: true",
+                                logic.method, url
+                            );
                             let evidence_resp = format!("HTTP/1.1 {}\n\n{}", status, text);
-                            
+
                             f.evidence_request = Some(evidence_req);
-                            
+
                             f.evidence_response = Some(if evidence_resp.len() > 2048 {
                                 format!("{}... [truncated]", &evidence_resp[..2048])
                             } else {

@@ -200,7 +200,8 @@ impl PluginRegistry {
                                 let entrypoint_path = extract_dir.join(&manifest.entrypoint);
                                 if manifest.runtime == "wasm" {
                                     tracing::info!(plugin = %manifest.name, "Loading VPA WASM plugin");
-                                    let capabilities: std::collections::HashSet<_> = manifest.capabilities.clone().into_iter().collect();
+                                    let capabilities: std::collections::HashSet<_> =
+                                        manifest.capabilities.clone().into_iter().collect();
                                     let plugin = crate::wasm_plugin::WasmPluginBridge::new(
                                         manifest.name.clone(),
                                         entrypoint_path,
@@ -262,7 +263,7 @@ impl PluginRegistry {
                 }
             }
         }
-        
+
         if let Ok(mut ext) = self.external_plugins.write() {
             *ext = loaded;
         }
@@ -287,7 +288,9 @@ impl PluginRegistry {
             notify::recommended_watcher(move |res: Result<notify::Event, notify::Error>| {
                 if let Ok(event) = res {
                     match event.kind {
-                        notify::EventKind::Create(_) | notify::EventKind::Modify(_) | notify::EventKind::Remove(_) => {
+                        notify::EventKind::Create(_)
+                        | notify::EventKind::Modify(_)
+                        | notify::EventKind::Remove(_) => {
                             tracing::info!(
                                 "Detected changes in {:?}, hot-reloading external plugins...",
                                 watch_dir

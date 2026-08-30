@@ -1,11 +1,11 @@
 use colored::*;
 use hmac::Hmac;
+use rand::Rng;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::time::sleep;
 use tokio_util::sync::CancellationToken;
 use valayam_config::agent::*;
-use rand::Rng;
 
 /// Minimum backoff between polls (when server returns 204)
 const MIN_BACKOFF_SECS: u64 = 1;

@@ -59,9 +59,8 @@ impl StateDB {
         let file_path = self.base_dir.join(format!("{}.bin", state_id));
         let tmp_path = self.base_dir.join(format!("{}.bin.tmp", state_id));
 
-        let data = bincode::serialize(&snapshot).map_err(|e| {
-            std::io::Error::new(std::io::ErrorKind::InvalidData, e)
-        })?;
+        let data = bincode::serialize(&snapshot)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
 
         // Atomic write: write to temp file first, then rename over the real file
         fs::write(&tmp_path, data)?;
@@ -70,10 +69,7 @@ impl StateDB {
         Ok(())
     }
 
-    pub fn load_state(
-        &self,
-        state_id: &str,
-    ) -> std::io::Result<Option<ScanCheckpoint>> {
+    pub fn load_state(&self, state_id: &str) -> std::io::Result<Option<ScanCheckpoint>> {
         let file_path = self.base_dir.join(format!("{}.bin", state_id));
 
         if !file_path.exists() {
@@ -100,11 +96,9 @@ mod tests {
             id: "test-scan-001".into(),
             pending_tasks: vec![
                 ("https://example.com".into(), "templates/x.yaml".into()),
-                ("https://test.com".into(), "templates/y.yaml".into())
+                ("https://test.com".into(), "templates/y.yaml".into()),
             ],
-            completed_tasks: vec![
-                ("https://done.com".into(), "templates/z.yaml".into())
-            ],
+            completed_tasks: vec![("https://done.com".into(), "templates/z.yaml".into())],
             finding_count: 5,
             severity_counts,
             started_at: 1700000000,
@@ -159,7 +153,13 @@ mod tests {
         let loaded = db.load_state("scan-1")?;
         assert!(loaded.is_some());
         let snapshot = loaded.unwrap();
-        assert_eq!(snapshot.pending_tasks, vec![("https://target.com".to_string(), "template.yaml".to_string())]);
+        assert_eq!(
+            snapshot.pending_tasks,
+            vec![(
+                "https://target.com".to_string(),
+                "template.yaml".to_string()
+            )]
+        );
         assert!(snapshot.completed_tasks.is_empty());
         Ok(())
     }
@@ -192,8 +192,14 @@ mod tests {
             HashMap::new(),
         )?;
         let snapshot = db.load_state("s")?.unwrap();
-        assert_eq!(snapshot.pending_tasks, vec![("https://new.com".to_string(), "tmpl2".to_string())]);
-        assert_eq!(snapshot.completed_tasks, vec![("https://old.com".to_string(), "tmpl1".to_string())]);
+        assert_eq!(
+            snapshot.pending_tasks,
+            vec![("https://new.com".to_string(), "tmpl2".to_string())]
+        );
+        assert_eq!(
+            snapshot.completed_tasks,
+            vec![("https://old.com".to_string(), "tmpl1".to_string())]
+        );
         assert_eq!(snapshot.finding_count, 1);
         Ok(())
     }

@@ -1,7 +1,7 @@
-use std::collections::{HashMap, HashSet};
-use semver::{Version, VersionReq};
-use valayam_models::error::ScannerError;
 use crate::vpa::PluginManifest;
+use semver::{Version, VersionReq};
+use std::collections::{HashMap, HashSet};
+use valayam_models::error::ScannerError;
 
 /// Resolves plugin dependencies and returns an ordered list of plugin names
 /// that guarantees dependencies are loaded before the plugins that depend on them.
@@ -19,32 +19,43 @@ pub fn resolve_dependencies(manifests: &[PluginManifest]) -> Result<Vec<String>,
         // Just validate the version string is semver, even if not strictly required for sorting
         let _plugin_version = match Version::parse(&manifest.version) {
             Ok(v) => v,
-            Err(_) => return Err(ScannerError::PluginInitializationError(format!(
-                "Invalid semver '{}' in plugin '{}'", manifest.version, manifest.name
-            ))),
+            Err(_) => {
+                return Err(ScannerError::PluginInitializationError(format!(
+                    "Invalid semver '{}' in plugin '{}'",
+                    manifest.version, manifest.name
+                )))
+            }
         };
 
         for dep in &manifest.dependencies {
             let dep_manifest = match manifest_map.get(&dep.name) {
                 Some(m) => m,
-                None => return Err(ScannerError::PluginInitializationError(format!(
-                    "Missing dependency: '{}' requires '{}'", manifest.name, dep.name
-                ))),
+                None => {
+                    return Err(ScannerError::PluginInitializationError(format!(
+                        "Missing dependency: '{}' requires '{}'",
+                        manifest.name, dep.name
+                    )))
+                }
             };
 
             let req = match VersionReq::parse(&dep.version_req) {
                 Ok(r) => r,
-                Err(_) => return Err(ScannerError::PluginInitializationError(format!(
-                    "Invalid version requirement '{}' for dependency '{}' in plugin '{}'",
-                    dep.version_req, dep.name, manifest.name
-                ))),
+                Err(_) => {
+                    return Err(ScannerError::PluginInitializationError(format!(
+                        "Invalid version requirement '{}' for dependency '{}' in plugin '{}'",
+                        dep.version_req, dep.name, manifest.name
+                    )))
+                }
             };
 
             let dep_version = match Version::parse(&dep_manifest.version) {
                 Ok(v) => v,
-                Err(_) => return Err(ScannerError::PluginInitializationError(format!(
-                    "Invalid semver '{}' in dependency plugin '{}'", dep_manifest.version, dep.name
-                ))),
+                Err(_) => {
+                    return Err(ScannerError::PluginInitializationError(format!(
+                        "Invalid semver '{}' in dependency plugin '{}'",
+                        dep_manifest.version, dep.name
+                    )))
+                }
             };
 
             if !req.matches(&dep_version) {

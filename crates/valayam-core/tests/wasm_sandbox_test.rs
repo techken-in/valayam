@@ -23,7 +23,12 @@ async fn test_wasm_plugin_initialization_missing_exports() {
     ));
     std::fs::write(&wasm_path, &wasm_bytes).unwrap();
 
-    let plugin = WasmPluginBridge::new("test_plugin", wasm_path.clone(), PluginConfig::default(), std::collections::HashSet::default());
+    let plugin = WasmPluginBridge::new(
+        "test_plugin",
+        wasm_path.clone(),
+        PluginConfig::default(),
+        std::collections::HashSet::default(),
+    );
     let init_result = plugin.init().await;
 
     // Phase 1 backward-compat fallback allows init to succeed even with missing exports.
@@ -63,8 +68,12 @@ async fn test_wasm_plugin_execution_success() {
     let wasm_path = tmp_dir.join(format!("test_wasm_success_{}.wasm", uuid::Uuid::new_v4()));
     std::fs::write(&wasm_path, &wasm_bytes).unwrap();
 
-    let plugin =
-        WasmPluginBridge::new("success_plugin", wasm_path.clone(), PluginConfig::default(), std::collections::HashSet::default());
+    let plugin = WasmPluginBridge::new(
+        "success_plugin",
+        wasm_path.clone(),
+        PluginConfig::default(),
+        std::collections::HashSet::default(),
+    );
     let init_result = plugin.init().await;
     assert!(
         init_result.is_ok(),

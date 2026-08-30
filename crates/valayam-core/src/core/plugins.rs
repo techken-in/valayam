@@ -92,7 +92,7 @@ impl ScanPlugin for HttpScanPlugin {
                         let mut caps = std::collections::HashSet::new();
                         caps.insert(valayam_engine::vpa::PluginCapability::Http);
                         caps.insert(valayam_engine::vpa::PluginCapability::Network);
-                        
+
                         let plugin = valayam_engine::wasm_plugin::WasmPluginBridge::new(
                             wasm_name.clone(),
                             path,
@@ -146,7 +146,10 @@ impl ScanPlugin for WebsocketScanPlugin {
         !template.websocket.is_empty()
     }
 
-    fn validate_config(&self, _template: &VulnerabilityTemplate) -> Result<(), valayam_models::error::ScannerError> {
+    fn validate_config(
+        &self,
+        _template: &VulnerabilityTemplate,
+    ) -> Result<(), valayam_models::error::ScannerError> {
         Ok(())
     }
 
@@ -168,7 +171,8 @@ impl ScanPlugin for WebsocketScanPlugin {
             &template.id,
             &template.info as &dyn TemplateMetadata,
             &mut vars,
-        ).await;
+        )
+        .await;
 
         if !results.is_empty() {
             for res in results {
@@ -201,7 +205,10 @@ impl ScanPlugin for GraphqlAuditPlugin {
         !template.graphql_audit.is_empty()
     }
 
-    fn validate_config(&self, _template: &VulnerabilityTemplate) -> Result<(), valayam_models::error::ScannerError> {
+    fn validate_config(
+        &self,
+        _template: &VulnerabilityTemplate,
+    ) -> Result<(), valayam_models::error::ScannerError> {
         Ok(())
     }
 
@@ -224,7 +231,8 @@ impl ScanPlugin for GraphqlAuditPlugin {
             &template.id,
             &template.info as &dyn TemplateMetadata,
             &mut vars,
-        ).await;
+        )
+        .await;
 
         if !results.is_empty() {
             for res in results {
@@ -257,7 +265,10 @@ impl ScanPlugin for GrpcAuditPlugin {
         !template.grpc_audit.is_empty()
     }
 
-    fn validate_config(&self, _template: &VulnerabilityTemplate) -> Result<(), valayam_models::error::ScannerError> {
+    fn validate_config(
+        &self,
+        _template: &VulnerabilityTemplate,
+    ) -> Result<(), valayam_models::error::ScannerError> {
         Ok(())
     }
 
@@ -280,7 +291,8 @@ impl ScanPlugin for GrpcAuditPlugin {
             &template.id,
             &template.info as &dyn TemplateMetadata,
             &mut vars,
-        ).await;
+        )
+        .await;
 
         if !results.is_empty() {
             for res in results {
@@ -653,7 +665,10 @@ impl ScanPlugin for AuthLogicPlugin {
         template.auth.is_some() && !template.logic.is_empty()
     }
 
-    fn validate_config(&self, _template: &VulnerabilityTemplate) -> Result<(), valayam_models::error::ScannerError> {
+    fn validate_config(
+        &self,
+        _template: &VulnerabilityTemplate,
+    ) -> Result<(), valayam_models::error::ScannerError> {
         Ok(())
     }
 
@@ -677,7 +692,8 @@ impl ScanPlugin for AuthLogicPlugin {
             &template.id,
             &template.info as &dyn valayam_models::templates::schema::TemplateMetadata,
             &mut vars,
-        ).await;
+        )
+        .await;
 
         if !results.is_empty() {
             let count = results.len();
@@ -709,7 +725,10 @@ impl ScanPlugin for SubdomainTakeoverPlugin {
         !template.subdomain_takeover.is_empty()
     }
 
-    fn validate_config(&self, _template: &VulnerabilityTemplate) -> Result<(), valayam_models::error::ScannerError> {
+    fn validate_config(
+        &self,
+        _template: &VulnerabilityTemplate,
+    ) -> Result<(), valayam_models::error::ScannerError> {
         Ok(())
     }
 
@@ -734,7 +753,8 @@ impl ScanPlugin for SubdomainTakeoverPlugin {
                     &template.id,
                     &template.info as &dyn valayam_models::templates::schema::TemplateMetadata,
                     &mut vars,
-                ).await;
+                )
+                .await;
                 all_results.extend(results);
             }
 

@@ -5,7 +5,7 @@ use valayam_plugin_sdk::{JsonSchema, ValayamConfig};
 struct DummyFuzzerConfig {
     /// The target endpoint to fuzz
     target: String,
-    
+
     /// Depth of the fuzzing operation (default 3)
     #[serde(default = "default_depth")]
     fuzz_depth: u32,

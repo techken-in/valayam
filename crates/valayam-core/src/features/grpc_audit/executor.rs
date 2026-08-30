@@ -1,12 +1,9 @@
-use valayam_models::{
-    finding::FindingOwned,
-    templates::{
-        schema::TemplateMetadata,
-        grpc_audit::GrpcAuditTemplate,
-    },
-};
 use crate::network::http::StealthHttpClient;
 use std::collections::HashMap;
+use valayam_models::{
+    finding::FindingOwned,
+    templates::{grpc_audit::GrpcAuditTemplate, schema::TemplateMetadata},
+};
 
 pub async fn execute(
     client: &StealthHttpClient,
@@ -33,13 +30,26 @@ pub async fn execute(
             let mut headers = HashMap::new();
             headers.insert("Content-Type".to_string(), "application/grpc".to_string());
             headers.insert("TE".to_string(), "trailers".to_string());
-            
-            let reflection_path = format!("{}/grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo", endpoint_url);
 
-            if let Ok(resp) = client.send_request("POST", &reflection_path, Some(&headers), None, Some(false), None).await {
+            let reflection_path = format!(
+                "{}/grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo",
+                endpoint_url
+            );
+
+            if let Ok(resp) = client
+                .send_request(
+                    "POST",
+                    &reflection_path,
+                    Some(&headers),
+                    None,
+                    Some(false),
+                    None,
+                )
+                .await
+            {
                 // If it responds with grpc-status or content-type application/grpc, reflection is likely enabled or at least gRPC is present
                 let mut is_grpc = false;
-                
+
                 for (k, v) in resp.headers() {
                     let k_str = k.as_str().to_lowercase();
                     if let Ok(v_str) = v.to_str() {
@@ -60,20 +70,26 @@ pub async fn execute(
                         section.target.clone(),
                     );
                     f.protocol = Some("grpc".to_string());
-                    f.evidence_request = Some(format!("POST {} HTTP/2\nContent-Type: application/grpc", reflection_path));
-                    f.evidence_response = Some("Received gRPC headers (Content-Type: application/grpc or grpc-status)".to_string());
+                    f.evidence_request = Some(format!(
+                        "POST {} HTTP/2\nContent-Type: application/grpc",
+                        reflection_path
+                    ));
+                    f.evidence_response = Some(
+                        "Received gRPC headers (Content-Type: application/grpc or grpc-status)"
+                            .to_string(),
+                    );
                     findings.push(f);
                 }
             }
         }
-        
+
         if let Some(payload_str) = &section.payload {
             let endpoint_url = if section.target.starts_with("http") {
                 section.target.clone()
             } else {
                 format!("http://{}", section.target)
             };
-            
+
             let method = section.method.as_deref().unwrap_or("UnknownMethod");
             let service = section.service.as_deref().unwrap_or("UnknownService");
             // gRPC paths are typically /Package.Service/Method
@@ -83,18 +99,28 @@ pub async fn execute(
             headers.insert("Content-Type".to_string(), "application/grpc".to_string());
             headers.insert("TE".to_string(), "trailers".to_string());
 
-            use base64::{Engine as _, engine::general_purpose::STANDARD as b64};
+            use base64::{engine::general_purpose::STANDARD as b64, Engine as _};
             if let Ok(decoded_payload) = b64.decode(payload_str) {
                 // Construct gRPC frame: [Compressed flag (1 byte)][Length (4 bytes)][Payload]
                 let mut grpc_frame = Vec::with_capacity(5 + decoded_payload.len());
                 grpc_frame.push(0u8); // Not compressed
                 grpc_frame.extend_from_slice(&(decoded_payload.len() as u32).to_be_bytes());
                 grpc_frame.extend_from_slice(&decoded_payload);
-                
-                if let Ok(resp) = client.send_request_bytes("POST", &grpc_path, Some(&headers), Some(grpc_frame), Some(false), None).await {
+
+                if let Ok(resp) = client
+                    .send_request_bytes(
+                        "POST",
+                        &grpc_path,
+                        Some(&headers),
+                        Some(grpc_frame),
+                        Some(false),
+                        None,
+                    )
+                    .await
+                {
                     let mut is_grpc = false;
                     let mut status_code = None;
-                    
+
                     for (k, v) in resp.headers() {
                         let k_str = k.as_str().to_lowercase();
                         if let Ok(v_str) = v.to_str() {
@@ -114,7 +140,10 @@ pub async fn execute(
                         );
                         f.protocol = Some("grpc".to_string());
                         f.evidence_request = Some(format!("POST {} HTTP/2\nContent-Type: application/grpc\n\n[gRPC Frame: {} bytes]", grpc_path, decoded_payload.len()));
-                        f.evidence_response = Some(format!("gRPC Status: {}", status_code.unwrap_or_else(|| "Unknown".to_string())));
+                        f.evidence_response = Some(format!(
+                            "gRPC Status: {}",
+                            status_code.unwrap_or_else(|| "Unknown".to_string())
+                        ));
                         findings.push(f);
                     }
                 }

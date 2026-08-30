@@ -95,8 +95,52 @@ impl ScanPlugin for WasmPluginBridge {
 
     fn validate_config(
         &self,
-        _template: &valayam_models::templates::schema::VulnerabilityTemplate,
+        template: &valayam_models::templates::schema::VulnerabilityTemplate,
     ) -> Result<(), valayam_models::error::ScannerError> {
+        let normalised = self
+            .name
+            .trim_end_matches(".wasm")
+            .replace('_', "-")
+            .to_lowercase();
+
+        let plugin_config = template
+            .plugins
+            .iter()
+            .find(|p| p.id.to_lowercase() == normalised);
+        let config_val = if let Some(p) = plugin_config {
+            serde_json::to_value(&p.config).unwrap_or(serde_json::Value::Null)
+        } else {
+            serde_json::Value::Null
+        };
+
+        let manifest = self.build_manifest();
+        let mut plugin = match extism::PluginBuilder::new(manifest).with_wasi(true).build() {
+            Ok(p) => p,
+            Err(e) => {
+                return Err(
+                    valayam_models::error::ScannerError::PluginInitializationError(e.to_string()),
+                )
+            }
+        };
+
+        let config_str = config_val.to_string();
+        if plugin.function_exists("validate_config") {
+            match plugin.call::<&str, &str>("validate_config", &config_str) {
+                Ok(response) => {
+                    if !response.is_empty() {
+                        return Err(valayam_models::error::ScannerError::ConfigurationError(
+                            response.to_string(),
+                        ));
+                    }
+                }
+                Err(e) => {
+                    return Err(valayam_models::error::ScannerError::ConfigurationError(
+                        format!("WASM validation failed: {}", e),
+                    ))
+                }
+            }
+        }
+
         Ok(())
     }
 
@@ -118,7 +162,11 @@ impl ScanPlugin for WasmPluginBridge {
             .to_lowercase();
 
         // 1. Check if the generic plugins block invokes this plugin
-        if template.plugins.iter().any(|p| p.id.to_lowercase() == normalised) {
+        if template
+            .plugins
+            .iter()
+            .any(|p| p.id.to_lowercase() == normalised)
+        {
             return true;
         }
 
@@ -139,7 +187,7 @@ impl ScanPlugin for WasmPluginBridge {
 
     async fn init(&self) -> Result<(), ScannerError> {
         use crate::host_functions::PluginCaps;
-        
+
         let caps = PluginCaps(self.capabilities.clone());
 
         let f1 = extism::Function::new::<PluginCaps, _>(
