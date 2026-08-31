@@ -530,6 +530,7 @@ pub async fn run_scan_with_job_id(
             vec![
                 std::path::Path::new("plugins").to_path_buf(),
                 std::path::Path::new("plugins-wasm/bin").to_path_buf(),
+                std::path::Path::new("plugins_ext").to_path_buf(),
             ]
         };
 

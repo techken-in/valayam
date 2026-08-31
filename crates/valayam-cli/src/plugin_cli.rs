@@ -637,3 +637,88 @@ pub async fn publish_plugin(file_path: &str) -> anyhow::Result<()> {
 
     Ok(())
 }
+
+pub fn plugin_info(plugin_path_or_name: &str) -> anyhow::Result<()> {
+    use colored::Colorize;
+    let mut candidate_path = std::path::PathBuf::from(plugin_path_or_name);
+
+    if !candidate_path.exists() {
+        // Try common locations
+        let candidates = vec![
+            format!("{}.vpa", plugin_path_or_name),
+            format!("plugins/{}.vpa", plugin_path_or_name),
+            format!("plugins_ext/dist/{}-0.1.0.vpa", plugin_path_or_name),
+            format!("plugins_ext/dist/{}.vpa", plugin_path_or_name),
+        ];
+
+        for c in candidates {
+            let p = std::path::PathBuf::from(&c);
+            if p.exists() {
+                candidate_path = p;
+                break;
+            }
+        }
+    }
+
+    if !candidate_path.exists() {
+        anyhow::bail!("Plugin archive or directory '{}' not found.", plugin_path_or_name);
+    }
+
+    if candidate_path.is_dir() {
+        let manifest_path = candidate_path.join("plugin.yaml");
+        if manifest_path.exists() {
+            let manifest_content = std::fs::read_to_string(&manifest_path)?;
+            let manifest: valayam_engine::vpa::PluginManifest = serde_yaml::from_str(&manifest_content)?;
+            println!("{} {} (v{})", "[+]".green().bold(), manifest.name.cyan().bold(), manifest.version);
+            println!("    Author: {}", manifest.author.as_deref().unwrap_or("Unknown"));
+            println!("    Runtime: {} ({})", manifest.runtime, manifest.language);
+            println!("    Entrypoint: {}", manifest.entrypoint);
+        }
+        let readme_path = candidate_path.join("README.md");
+        if readme_path.exists() {
+            println!("\n{}\n", "─".repeat(60).bright_black());
+            println!("{}", std::fs::read_to_string(readme_path)?);
+        }
+        return Ok(());
+    }
+
+    // Read VPA zip archive
+    let file = File::open(&candidate_path)?;
+    let mut archive = zip::ZipArchive::new(file)?;
+
+    let mut manifest_content: Option<String> = None;
+    let mut readme_content: Option<String> = None;
+
+    for i in 0..archive.len() {
+        let mut entry = archive.by_index(i)?;
+        let name = entry.name().to_string();
+        if name == "plugin.yaml" {
+            let mut s = String::new();
+            entry.read_to_string(&mut s)?;
+            manifest_content = Some(s);
+        } else if name.eq_ignore_ascii_case("readme.md") {
+            let mut s = String::new();
+            entry.read_to_string(&mut s)?;
+            readme_content = Some(s);
+        }
+    }
+
+    if let Some(content) = manifest_content {
+        let manifest: valayam_engine::vpa::PluginManifest = serde_yaml::from_str(&content)?;
+        println!("{} {} (v{})", "[+]".green().bold(), manifest.name.cyan().bold(), manifest.version);
+        println!("    Author: {}", manifest.author.as_deref().unwrap_or("Unknown"));
+        println!("    Runtime: {} ({})", manifest.runtime, manifest.language);
+        println!("    Entrypoint: {}", manifest.entrypoint);
+    } else {
+        println!("{} Plugin archive: {}", "[+]".green().bold(), candidate_path.display());
+    }
+
+    if let Some(readme) = readme_content {
+        println!("\n{}\n", "─".repeat(60).bright_black());
+        println!("{}", readme);
+    } else {
+        println!("\n{} No embedded README.md found in .vpa archive.", "[i]".blue().bold());
+    }
+
+    Ok(())
+}

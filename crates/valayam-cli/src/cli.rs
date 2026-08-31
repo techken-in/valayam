@@ -438,6 +438,12 @@ pub enum PluginCommands {
     },
     /// List all locally installed and registered plugins
     List,
+    /// Display metadata, parameters, and embedded README for a .vpa plugin
+    Info {
+        /// Path to the .vpa plugin archive or plugin name
+        #[arg(value_name = "PLUGIN")]
+        plugin: String,
+    },
 }
 
 #[derive(clap::Subcommand, Debug, Clone)]

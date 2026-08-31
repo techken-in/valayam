@@ -378,6 +378,10 @@ async fn handle_plugin_command(action: &cli::PluginCommands) -> anyhow::Result<(
                 .await
                 .map_err(|e| anyhow::anyhow!("Failed to publish plugin: {}", e))?;
         }
+        cli::PluginCommands::Info { plugin } => {
+            crate::plugin_cli::plugin_info(plugin)
+                .map_err(|e| anyhow::anyhow!("Failed to read plugin info: {}", e))?;
+        }
     }
     Ok(())
 }

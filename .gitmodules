@@ -1,0 +1,6 @@
+[submodule "templates_ext"]
+	path = templates_ext
+	url = https://github.com/techken-in/valayam-templates
+[submodule "plugins_ext"]
+	path = plugins_ext
+	url = https://github.com/techken-in/valayam-plugins
