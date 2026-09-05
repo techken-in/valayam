@@ -10,13 +10,13 @@ serde_json.workspace = true
 tokio = { workspace = true, features = ["full", "signal"] }
 valayam-engine = { path = "../valayam-engine" }
 valayam-proto = { workspace = true }
-tonic = "0.10"
-prost = "0.12"
+tonic = "0.11"
+prost = "0.14"
 bytes = "1.5"
 tokio-stream = "0.1"
 
 [target.'cfg(target_os = "linux")'.dependencies]
-aya = { version = "0.12", features = ["async_tokio"] }
-aya-log = "0.2"
+aya = { version = "0.13", features = ["async_tokio"] }
+aya-log = "0.3"
 
 [build-dependencies]
