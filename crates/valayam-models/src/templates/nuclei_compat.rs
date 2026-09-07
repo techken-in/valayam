@@ -11,11 +11,33 @@ pub struct NucleiTemplate {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[non_exhaustive]
 pub struct NucleiTemplateInfo {
     pub name: String,
     pub author: Option<String>,
     pub severity: String,
     pub description: Option<String>,
+}
+
+impl NucleiTemplateInfo {
+    pub fn new(name: impl Into<String>, severity: impl Into<String>) -> Self {
+        Self {
+            name: name.into(),
+            author: None,
+            severity: severity.into(),
+            description: None,
+        }
+    }
+
+    pub fn with_author(mut self, author: impl Into<String>) -> Self {
+        self.author = Some(author.into());
+        self
+    }
+
+    pub fn with_description(mut self, description: impl Into<String>) -> Self {
+        self.description = Some(description.into());
+        self
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -185,12 +207,9 @@ requests:
     fn test_nuclei_template_serde_roundtrip() {
         let tmpl = NucleiTemplate {
             id: "roundtrip".to_string(),
-            info: NucleiTemplateInfo {
-                name: "Roundtrip Test".to_string(),
-                author: Some("tester".to_string()),
-                severity: "critical".to_string(),
-                description: Some("Testing serde roundtrip".to_string()),
-            },
+            info: NucleiTemplateInfo::new("Roundtrip Test", "critical")
+                .with_author("tester")
+                .with_description("Testing serde roundtrip"),
             requests: vec![NucleiRequestTemplate {
                 method: "GET".to_string(),
                 path: vec!["/".to_string()],

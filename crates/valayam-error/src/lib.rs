@@ -12,6 +12,7 @@ use thiserror::Error;
 /// Production-grade error handling with fine-grained variants for every
 /// feature module. All variants serialise cleanly for SIEM consumption.
 #[derive(Error, Debug)]
+#[non_exhaustive]
 pub enum ScannerError {
     // ── Template/I/O ──
     #[error("Failed to read template file: {0}")]

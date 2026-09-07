@@ -6,6 +6,7 @@ use rustls::SignatureScheme;
 /// A TLS certificate verifier that accepts all certificates.
 /// Used for inspection/diagnostic purposes where we don't need to validate the server identity.
 #[derive(Debug)]
+#[non_exhaustive]
 pub struct NoCertVerification;
 
 impl NoCertVerification {
@@ -73,6 +74,7 @@ impl Default for NoCertVerification {
 /// This module provides utilities to modify TLS client hello messages
 /// to mimic common browsers and evade WAF/detection systems that rely on TLS fingerprinting.
 #[derive(Clone)]
+#[non_exhaustive]
 pub struct Ja3Ja4Spoofer {
     /// Profile to mimic (chrome, firefox, safari, edge, etc.)
     profile: Ja3Ja4Profile,
@@ -356,6 +358,7 @@ impl Ja3Ja4Spoofer {
 
 /// Available JA3/JA4 profiles for spoofing
 #[derive(Debug, Clone, Copy)]
+#[non_exhaustive]
 pub enum Ja3Ja4Profile {
     Chrome,
     Firefox,
@@ -365,6 +368,7 @@ pub enum Ja3Ja4Profile {
 }
 
 /// TLS configuration wrapper that applies JA3/JA4 spoofing
+#[non_exhaustive]
 pub struct TlsConfig {
     /// JA3/JA4 spoofer for fingerprint evasion
     spoofer: Option<Ja3Ja4Spoofer>,

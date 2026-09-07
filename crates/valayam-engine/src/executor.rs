@@ -14,6 +14,7 @@ use crate::scan_state::ScanState;
 
 #[derive(Clone)]
 /// Documentation for this item.
+#[non_exhaustive]
 pub struct ScanExecutor {
     finding_tx: mpsc::Sender<FindingOwned>,
     registry: Arc<PluginRegistry>,

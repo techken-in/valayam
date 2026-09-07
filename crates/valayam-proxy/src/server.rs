@@ -9,18 +9,21 @@ use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
 
 #[derive(Serialize)]
+#[non_exhaustive]
 pub struct StatusResponse {
     status: String,
     active_proxies: usize,
 }
 
 #[derive(Serialize, Deserialize)]
+#[non_exhaustive]
 pub struct ModificationRequest {
     pub request_id: String,
     pub modified_body: Option<String>,
     pub modified_headers: Option<Vec<(String, String)>>,
 }
 
+#[non_exhaustive]
 pub struct UiProxyServer;
 
 impl UiProxyServer {

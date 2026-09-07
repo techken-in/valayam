@@ -21,6 +21,7 @@ struct WasmPluginFinding {
 
 /// Configuration for WASM plugin sandbox limits.
 #[derive(Clone)]
+#[non_exhaustive]
 pub struct PluginConfig {
     /// Max WASM memory in pages (64KB per page). Default 2048 = 128 MB.
     pub memory_max_pages: u32,
@@ -28,6 +29,35 @@ pub struct PluginConfig {
     pub timeout_ms: u64,
     /// Allowed HTTP hosts for plugin egress. Empty = deny all.
     pub allowed_hosts: Vec<String>,
+}
+
+impl PluginConfig {
+    /// Create a new PluginConfig.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn with_memory_max_pages(mut self, pages: u32) -> Self {
+        self.memory_max_pages = pages;
+        self
+    }
+
+    pub fn with_timeout_ms(mut self, timeout_ms: u64) -> Self {
+        self.timeout_ms = timeout_ms;
+        self
+    }
+
+    pub fn with_allowed_hosts(mut self, hosts: Vec<String>) -> Self {
+        self.allowed_hosts = hosts;
+        self
+    }
+}
+
+impl PluginConfig {
+    /// Create a new PluginConfig.
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 
 impl Default for PluginConfig {
@@ -47,6 +77,7 @@ impl Default for PluginConfig {
 ///
 /// The input JSON format: `{"template":{...},"context":{...}}`
 /// The result JSON format: `{"matched":true,"count":N,"findings":[...]}` or `{"matched":false}`
+#[non_exhaustive]
 pub struct WasmPluginBridge {
     name: String,
     wasm_path: PathBuf,

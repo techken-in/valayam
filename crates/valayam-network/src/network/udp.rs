@@ -10,6 +10,7 @@ use tokio::net::UdpSocket;
 
 /// Result of a UDP port scan, including optional response data.
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct UdpPortResult {
     pub port: u16,
     pub response: Option<Vec<u8>>,
@@ -17,10 +18,18 @@ pub struct UdpPortResult {
     pub service_info: service_info::ServiceInfo,
 }
 
+impl UdpPortResult {
+    /// Create a new UdpPortResult
+    pub fn new(port: u16, response: Option<Vec<u8>>, service_info: service_info::ServiceInfo) -> Self {
+        Self { port, response, service_info }
+    }
+}
+
 /// Additional service information for UDP services
 pub mod service_info {
 
     #[derive(Debug, Clone, Default)]
+    #[non_exhaustive]
     pub struct ServiceInfo {
         /// Detected service name (DNS, SNMP, DHCP, etc.)
         pub service_name: Option<String>,
@@ -40,6 +49,13 @@ pub mod service_info {
         pub is_tftp: bool,
         /// Whether this appears to be an SSDP service
         pub is_ssdp: bool,
+    }
+
+    impl ServiceInfo {
+        /// Create a new ServiceInfo
+        pub fn new() -> Self {
+            Self::default()
+        }
     }
 }
 
@@ -466,11 +482,7 @@ pub async fn scan_ports(
                 }
             }
 
-            Some(UdpPortResult {
-                port,
-                response,
-                service_info,
-            })
+            Some(UdpPortResult::new(port, response, service_info))
         })
     });
 

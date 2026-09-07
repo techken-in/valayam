@@ -202,15 +202,7 @@ impl VulnerabilityTemplate {
     pub fn empty() -> Self {
         Self {
             id: String::new(),
-            info: TemplateInfo {
-                name: String::new(),
-                severity: "info".into(),
-                author: None,
-                description: None,
-                category: None,
-                tags: vec![],
-                compliance: Default::default(),
-            },
+            info: TemplateInfo::new("", "info"),
             auth: None,
             requests: vec![],
             network: vec![],

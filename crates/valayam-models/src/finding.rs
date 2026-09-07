@@ -6,6 +6,7 @@ use std::time::Duration;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(from = "String", into = "String")]
+#[non_exhaustive]
 pub enum Severity {
     Critical,
     High,
@@ -225,6 +226,7 @@ impl FindingOwned {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[non_exhaustive]
 pub enum PluginOutcomeKind {
     /// Plugin found no vulnerabilities.
     #[serde(rename = "no_match")]
@@ -261,6 +263,7 @@ impl std::fmt::Display for PluginOutcomeKind {
 
 /// Per-plugin execution metrics collected during a scan.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[non_exhaustive]
 pub struct PluginMetrics {
     pub plugin_name: String,
     pub target: String,
@@ -269,11 +272,37 @@ pub struct PluginMetrics {
     pub finding_count: usize,
 }
 
+impl PluginMetrics {
+    /// Create a new PluginMetrics.
+    pub fn new(plugin_name: String, target: String, outcome: PluginOutcomeKind, duration: Duration, finding_count: usize) -> Self {
+        Self {
+            plugin_name,
+            target,
+            outcome,
+            duration,
+            finding_count,
+        }
+    }
+}
+
 /// Result of a plugin health check.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[non_exhaustive]
 pub struct PluginHealth {
     pub plugin_name: String,
     pub is_healthy: bool,
     pub error: Option<String>,
     pub last_checked_ms: u64,
+}
+
+impl PluginHealth {
+    /// Create a new PluginHealth.
+    pub fn new(plugin_name: String, is_healthy: bool) -> Self {
+        Self {
+            plugin_name,
+            is_healthy,
+            error: None,
+            last_checked_ms: 0,
+        }
+    }
 }

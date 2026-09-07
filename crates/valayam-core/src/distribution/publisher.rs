@@ -6,6 +6,7 @@ use std::collections::HashMap;
 use std::path::Path;
 
 /// Documentation for this item.
+#[non_exhaustive]
 pub struct PluginPublisher {
     client: OciClient,
 }

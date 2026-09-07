@@ -8361,6 +8361,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_yaml",
+ "thiserror 1.0.69",
  "time 0.3.54",
  "tokio",
  "tokio-rustls 0.26.4",

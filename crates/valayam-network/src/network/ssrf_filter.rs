@@ -3,9 +3,17 @@ use valayam_models::error::ScannerError;
 
 /// Configuration for SSRF (Server-Side Request Forgery) protection.
 #[derive(Clone, Default)]
+#[non_exhaustive]
 pub struct SsrfConfig {
     /// When true, allows requests to private/internal IP ranges.
     pub allow_internal: bool,
+}
+
+impl SsrfConfig {
+    /// Create a new SsrfConfig with the specified allow_internal setting.
+    pub fn new(allow_internal: bool) -> Self {
+        Self { allow_internal }
+    }
 }
 
 /// Check whether a URL targets a private/internal IP address.
@@ -138,9 +146,7 @@ mod tests {
     #[test]
     fn test_allow_internal_bypass() {
         let config_block = SsrfConfig::default();
-        let config_allow = SsrfConfig {
-            allow_internal: true,
-        };
+        let config_allow = SsrfConfig::new(true);
 
         assert!(reject_private_ip("http://127.0.0.1:8080", &config_block).is_err());
         assert!(reject_private_ip("http://127.0.0.1:8080", &config_allow).is_ok());

@@ -24,6 +24,7 @@ use std::path::{Path, PathBuf};
 
 /// Error returned when configuration cannot be resolved.
 #[derive(Debug, thiserror::Error)]
+#[non_exhaustive]
 pub enum StorageError {
     #[error("invalid VALAYAM_STORAGE_BACKEND value '{0}' (expected local|s3|minio)")]
     InvalidBackend(String),
@@ -36,6 +37,7 @@ pub enum StorageError {
 /// Where artifacts are physically persisted.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
+#[non_exhaustive]
 pub enum StorageBackend {
     /// Local filesystem (or shared volume). Default; backwards-compatible.
     Local,
@@ -68,6 +70,7 @@ impl Default for StorageBackend {
 /// How a worker node acquires plugins for a scan.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
+#[non_exhaustive]
 pub enum WorkerPluginSource {
     /// Watch a local directory of `.vpa`/`.wasm` files (legacy behaviour).
     Local,
@@ -96,6 +99,7 @@ impl Default for WorkerPluginSource {
 
 /// S3/Minio connection details. Populated only when the backend is `S3` or `Minio`.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[non_exhaustive]
 pub struct S3Config {
     #[serde(default)]
     pub endpoint: Option<String>,
@@ -120,6 +124,7 @@ fn default_force_path_style() -> bool {
 
 /// Resolved storage configuration. Built via [`StorageConfig::from_env`].
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[non_exhaustive]
 pub struct StorageConfig {
     pub backend: StorageBackend,
     pub plugin_home: PathBuf,
@@ -294,6 +299,7 @@ pub trait ArtifactStore: Send + Sync {
 
 /// Metadata returned by `stat` operation.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[non_exhaustive]
 pub struct ArtifactMetadata {
     pub size: u64,
     pub modified: Option<std::time::SystemTime>,
@@ -301,6 +307,7 @@ pub struct ArtifactMetadata {
 
 /// Error returned by [`ArtifactStore`] operations.
 #[derive(Debug, thiserror::Error)]
+#[non_exhaustive]
 pub enum ArtifactStoreError {
     #[error("I/O error on local store: {0}")]
     Local(#[from] std::io::Error),
@@ -314,6 +321,7 @@ pub enum ArtifactStoreError {
 
 /// Local-filesystem artifact store.
 #[derive(Clone, Debug)]
+#[non_exhaustive]
 pub struct LocalArtifactStore {
     root: PathBuf,
 }
@@ -431,6 +439,7 @@ mod s3_backend {
     /// `force_path_style(true)` on the client config — the caller does this
     /// when the backend is `Minio` (see [`StorageConfig`]).
     #[derive(Clone)]
+    #[non_exhaustive]
     pub struct S3ArtifactStore {
         client: Arc<S3Client>,
         bucket: String,
@@ -646,6 +655,15 @@ impl EncryptedArtifactStore {
                 )
             })
     }
+}
+
+/// Summary of storage backends — forward-compatible.
+#[non_exhaustive]
+pub struct StorageSummary {
+    pub backends: usize,
+    pub local_stores: usize,
+    pub s3_stores: usize,
+    pub encrypted_stores: usize,
 }
 
 #[async_trait::async_trait]

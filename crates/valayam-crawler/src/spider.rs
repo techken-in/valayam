@@ -9,6 +9,7 @@ use crate::wordlists::CRAWLER_PROBE_PATHS;
 use valayam_engine::rate_limiter::RateLimiter;
 use valayam_network::network::http::StealthHttpClient;
 
+#[non_exhaustive]
 pub struct Crawler {
     client: Arc<StealthHttpClient>,
     target_host: String,
@@ -21,6 +22,7 @@ pub struct Crawler {
 }
 
 impl Crawler {
+    /// Create a new Crawler.
     pub fn new(
         client: Arc<StealthHttpClient>,
         target_url_str: &str,

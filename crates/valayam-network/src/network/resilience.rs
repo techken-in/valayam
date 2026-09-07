@@ -2,6 +2,7 @@ use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 
 /// A simple Circuit Breaker to prevent overwhelming a target that is failing.
+#[non_exhaustive]
 pub struct CircuitBreaker {
     failure_count: AtomicUsize,
     success_count: AtomicUsize,
@@ -64,6 +65,7 @@ struct TokenBucketState {
 
 /// Adaptive Rate Limiter adjusts its delay based on server responses.
 /// Implements a token bucket algorithm to support bursting while maintaining an average rate limit.
+#[non_exhaustive]
 pub struct AdaptiveRateLimiter {
     current_delay_ms: AtomicU64,
     min_delay_ms: u64,

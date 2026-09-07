@@ -9,6 +9,7 @@ use valayam_models::templates::schema::{TemplateMetadata, VulnerabilityTemplate}
 // ─── Native Plugins ─────────────────────────────────────────────────────────────
 
 /// Documentation for this item.
+#[non_exhaustive]
 pub struct HttpScanPlugin {
     client: Arc<StealthHttpClient>,
 }
@@ -128,6 +129,7 @@ impl ScanPlugin for HttpScanPlugin {
     }
 }
 
+#[non_exhaustive]
 pub struct WebsocketScanPlugin;
 
 impl WebsocketScanPlugin {
@@ -306,6 +308,7 @@ impl ScanPlugin for GrpcAuditPlugin {
 }
 
 /// Documentation for this item.
+#[non_exhaustive]
 pub struct SchemaDriftPlugin {
     client: Arc<StealthHttpClient>,
 }
@@ -360,6 +363,7 @@ impl ScanPlugin for SchemaDriftPlugin {
 }
 
 /// Documentation for this item.
+#[non_exhaustive]
 pub struct DnsAuditPlugin;
 #[async_trait]
 impl ScanPlugin for DnsAuditPlugin {
@@ -406,6 +410,7 @@ impl ScanPlugin for DnsAuditPlugin {
 }
 
 /// Documentation for this item.
+#[non_exhaustive]
 pub struct PortScanPlugin;
 #[async_trait]
 impl ScanPlugin for PortScanPlugin {
@@ -573,6 +578,7 @@ impl ScanPlugin for OobPlugin {
 }
 
 /// Documentation for this item.
+#[non_exhaustive]
 pub struct ShellsPlugin;
 #[async_trait]
 impl ScanPlugin for ShellsPlugin {
@@ -645,6 +651,7 @@ impl ScanPlugin for ShellsPlugin {
     }
 }
 
+#[non_exhaustive]
 pub struct AuthLogicPlugin {
     client: Arc<StealthHttpClient>,
 }
@@ -707,6 +714,7 @@ impl ScanPlugin for AuthLogicPlugin {
     }
 }
 
+#[non_exhaustive]
 pub struct SubdomainTakeoverPlugin;
 
 impl SubdomainTakeoverPlugin {

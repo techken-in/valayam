@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 
 /// Agent configuration — defines how this worker connects to the platform.
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct AgentConfig {
     pub platform_url: String,
     pub worker_id: String,
@@ -11,6 +12,27 @@ pub struct AgentConfig {
     pub heartbeat_interval_secs: u64,
     pub capabilities: Vec<String>,
     pub job_secret: String,
+}
+
+impl AgentConfig {
+    /// Create a new AgentConfig.
+    pub fn new(
+        platform_url: impl Into<String>,
+        worker_id: impl Into<String>,
+        poll_interval_secs: u64,
+        heartbeat_interval_secs: u64,
+        capabilities: Vec<String>,
+        job_secret: impl Into<String>,
+    ) -> Self {
+        Self {
+            platform_url: platform_url.into(),
+            worker_id: worker_id.into(),
+            poll_interval_secs,
+            heartbeat_interval_secs,
+            capabilities,
+            job_secret: job_secret.into(),
+        }
+    }
 }
 
 impl Default for AgentConfig {
@@ -28,6 +50,7 @@ impl Default for AgentConfig {
 
 /// Job dispatched by the platform for the worker to execute.
 #[derive(Debug, Deserialize, Serialize, Clone)]
+#[non_exhaustive]
 pub struct AgentJob {
     pub job_id: String,
     pub target_url: String,
@@ -36,13 +59,17 @@ pub struct AgentJob {
     pub auth: Option<AgentJobAuth>,
 }
 
+/// Job template.
 #[derive(Debug, Deserialize, Serialize, Clone)]
+#[non_exhaustive]
 pub struct AgentJobTemplate {
     pub id: String,
     pub yaml: String,
 }
 
+/// Job configuration.
 #[derive(Debug, Deserialize, Serialize, Clone)]
+#[non_exhaustive]
 pub struct AgentJobConfig {
     pub concurrency: Option<usize>,
     pub rate_limit: Option<u32>,
@@ -53,7 +80,9 @@ pub struct AgentJobConfig {
     pub output_format: Option<String>,
 }
 
+/// Job authentication.
 #[derive(Debug, Deserialize, Serialize, Clone)]
+#[non_exhaustive]
 pub struct AgentJobAuth {
     pub job_token: String,
     pub headers: Option<std::collections::HashMap<String, String>>,
@@ -61,6 +90,7 @@ pub struct AgentJobAuth {
 
 /// Result payload posted back to the platform.
 #[derive(Debug, Serialize)]
+#[non_exhaustive]
 pub struct AgentJobResult {
     pub job_id: String,
     pub status: String,
@@ -76,6 +106,7 @@ pub struct AgentJobResult {
 
 /// Heartbeat payload pushed to the platform every N seconds.
 #[derive(Debug, Serialize)]
+#[non_exhaustive]
 pub struct AgentHeartbeat {
     pub worker_id: String,
     pub version: String,
@@ -90,6 +121,7 @@ pub struct AgentHeartbeat {
 
 /// Response from `POST /jobs/poll` — either a job or a `no-content` signal.
 #[derive(Debug, Deserialize)]
+#[non_exhaustive]
 pub struct PollResponse {
     pub job: Option<AgentJob>,
 }
@@ -97,6 +129,7 @@ pub struct PollResponse {
 /// Poll error response
 #[allow(dead_code)]
 #[derive(Debug, Deserialize)]
+#[non_exhaustive]
 pub struct PollError {
     pub error: String,
 }

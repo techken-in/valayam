@@ -17,6 +17,7 @@ use valayam_engine::rate_limiter::RateLimiter;
 
 /// Result of the scan setup phase. Everything needed for `orchestrator::run_scan`.
 #[allow(dead_code)]
+#[non_exhaustive]
 pub struct ScanSetup {
     /// Resolved targets (after optional crawler expansion).
     pub targets: Vec<String>,
@@ -30,6 +31,27 @@ pub struct ScanSetup {
     pub state_rx: Option<tokio::sync::watch::Receiver<valayam_engine::scan_state::ScanState>>,
     /// Global cancellation token.
     pub cancel: tokio_util::sync::CancellationToken,
+}
+
+impl ScanSetup {
+    /// Create a new ScanSetup with all required fields.
+    pub fn new(
+        targets: Vec<String>,
+        http_client: Arc<StealthHttpClient>,
+        rate_limiter: Option<Arc<RateLimiter>>,
+        grpc_client: Option<ScannerClient<tonic::transport::Channel>>,
+        state_rx: Option<tokio::sync::watch::Receiver<valayam_engine::scan_state::ScanState>>,
+        cancel: tokio_util::sync::CancellationToken,
+    ) -> Self {
+        Self {
+            targets,
+            http_client,
+            rate_limiter,
+            grpc_client,
+            state_rx,
+            cancel,
+        }
+    }
 }
 
 /// Resolve the template path flag if passed (mainly for nuclei legacy support).

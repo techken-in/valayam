@@ -1,11 +1,13 @@
 use valayam_engine::traits::{FindingOwned, Reporter};
 
 /// Fans out findings to multiple reporters (e.g., Console + JSON simultaneously).
+#[non_exhaustive]
 pub struct CompositeReporter {
     reporters: Vec<Box<dyn Reporter>>,
 }
 
 impl CompositeReporter {
+    /// Create a new CompositeReporter.
     pub fn new(reporters: Vec<Box<dyn Reporter>>) -> Self {
         Self { reporters }
     }

@@ -5,6 +5,7 @@ use tokio::time::timeout;
 
 /// TLS certificate information extracted from a connection.
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct CertInfo {
     pub issuer: String,
     pub subject: String,
@@ -29,8 +30,35 @@ pub struct CertInfo {
     pub has_weak_key: bool,
 }
 
+impl CertInfo {
+    /// Create a new CertInfo with default values.
+    pub fn new(issuer: String, subject: String) -> Self {
+        Self {
+            issuer,
+            subject,
+            not_before: String::new(),
+            not_after: String::new(),
+            is_expired: false,
+            is_self_signed: false,
+            serial: String::new(),
+            signature_algorithm: String::new(),
+            tls_version: None,
+            cipher_suite: None,
+            subject_alternative_names: Vec::new(),
+            public_key_algorithm: String::new(),
+            public_key_bits: None,
+            is_ca: false,
+            path_len_constraint: None,
+            ct_scts: Vec::new(),
+            has_weak_signature: false,
+            has_weak_key: false,
+        }
+    }
+}
+
 /// Enhanced TLS connection information
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct TlsConnectionInfo {
     pub cert_info: CertInfo,
     pub protocol_version: Option<String>,
@@ -41,16 +69,42 @@ pub struct TlsConnectionInfo {
     pub supported_versions: Vec<String>,
 }
 
+impl TlsConnectionInfo {
+    /// Create a new TlsConnectionInfo.
+    pub fn new(cert_info: CertInfo) -> Self {
+        Self {
+            cert_info,
+            protocol_version: None,
+            cipher_suite: None,
+            validation_result: None,
+            supported_versions: Vec::new(),
+        }
+    }
+}
+
 /// Result of TLS certificate validation
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct ValidationResult {
     pub is_trusted: bool,
     pub validation_errors: Vec<String>,
     pub validation_warnings: Vec<String>,
 }
 
+impl ValidationResult {
+    /// Create a new ValidationResult.
+    pub fn new(is_trusted: bool) -> Self {
+        Self {
+            is_trusted,
+            validation_errors: Vec::new(),
+            validation_warnings: Vec::new(),
+        }
+    }
+}
+
 /// Information about a TLS protocol version test
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct VersionTestResult {
     pub version: String,
     pub supported: bool,
@@ -58,8 +112,20 @@ pub struct VersionTestResult {
     pub failure_reason: Option<String>,
 }
 
+impl VersionTestResult {
+    /// Create a new VersionTestResult.
+    pub fn new(version: String, supported: bool) -> Self {
+        Self {
+            version,
+            supported,
+            failure_reason: None,
+        }
+    }
+}
+
 /// Information about cipher suite strength
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct CipherSuiteInfo {
     pub suite: String,
     pub is_strong: bool,
@@ -67,14 +133,38 @@ pub struct CipherSuiteInfo {
     pub recommended_alternative: Option<String>,
 }
 
+impl CipherSuiteInfo {
+    /// Create a new CipherSuiteInfo.
+    pub fn new(suite: String, is_strong: bool) -> Self {
+        Self {
+            suite,
+            is_strong,
+            weakness: None,
+            recommended_alternative: None,
+        }
+    }
+}
+
 /// Represents a TLS cipher suite with strength information
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
 pub struct Weakness {
     pub description: String,
     pub severity: WeaknessSeverity,
 }
 
+impl Weakness {
+    /// Create a new Weakness.
+    pub fn new(description: String, severity: WeaknessSeverity) -> Self {
+        Self {
+            description,
+            severity,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum WeaknessSeverity {
     Low,
     Medium,

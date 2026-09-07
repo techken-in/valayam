@@ -3,6 +3,7 @@ use serde_json::json;
 use valayam_core::core::result::ScanResult;
 
 /// Sends real-time notifications to webhooks (Slack, Teams, Discord).
+#[non_exhaustive]
 pub struct Notifier;
 
 impl Notifier {

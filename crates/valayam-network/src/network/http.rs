@@ -130,6 +130,7 @@ impl ProxiedClientPool {
 
 /// Enhanced HTTP client with WAF evasion capabilities.
 #[derive(Clone)]
+#[non_exhaustive]
 pub struct StealthHttpClient {
     /// Base reqwest client (without proxy)
     client: Client,

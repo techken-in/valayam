@@ -14,12 +14,21 @@ pub type PluginResult<T> = extism_pdk::FnResult<T>;
 pub type PluginResult<T> = Result<T, PluginError>;
 
 #[derive(Debug, Serialize, Deserialize)]
+#[non_exhaustive]
 pub struct WasmInput {
     pub template: serde_json::Value,
     pub context: HashMap<String, String>,
 }
 
+impl WasmInput {
+    /// Create a new WasmInput.
+    pub fn new(template: serde_json::Value, context: HashMap<String, String>) -> Self {
+        Self { template, context }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
+#[non_exhaustive]
 pub struct Finding {
     pub template_id: String,
     pub template_name: String,
@@ -36,13 +45,48 @@ pub struct Finding {
     pub metadata: HashMap<String, String>,
 }
 
+impl Finding {
+    /// Create a new Finding.
+    pub fn new(
+        template_id: impl Into<String>,
+        template_name: impl Into<String>,
+        severity: impl Into<String>,
+        target: impl Into<String>,
+        matched_at: impl Into<String>,
+    ) -> Self {
+        Self {
+            template_id: template_id.into(),
+            template_name: template_name.into(),
+            severity: severity.into(),
+            target: target.into(),
+            matched_at: matched_at.into(),
+            description: None,
+            solution: None,
+            extracted_data: None,
+            metadata: HashMap::new(),
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
+#[non_exhaustive]
 pub struct WasmOutput {
     pub matched: bool,
     #[serde(default)]
     pub count: usize,
     #[serde(default)]
     pub findings: Vec<Finding>,
+}
+
+impl WasmOutput {
+    /// Create a new WasmOutput.
+    pub fn new(matched: bool) -> Self {
+        Self {
+            matched,
+            count: 0,
+            findings: Vec::new(),
+        }
+    }
 }
 
 pub trait WasmScanner {
@@ -55,10 +99,10 @@ mod tests {
 
     #[test]
     fn test_wasm_input_serialization() {
-        let input = WasmInput {
-            template: serde_json::json!({"id": "test"}),
-            context: [("key".into(), "value".into())].into(),
-        };
+        let input = WasmInput::new(
+            serde_json::json!({"id": "test"}),
+            [("key".into(), "value".into())].into(),
+        );
         let json = serde_json::to_string(&input).expect("serialize");
         let back: WasmInput = serde_json::from_str(&json).expect("deserialize");
         assert_eq!(back.template["id"], "test");
@@ -67,17 +111,9 @@ mod tests {
 
     #[test]
     fn test_finding_defaults() {
-        let f = Finding {
-            template_id: "t1".into(),
-            template_name: "Test".into(),
-            severity: "high".into(),
-            target: "example.com".into(),
-            matched_at: "path".into(),
-            description: None,
-            solution: None,
-            extracted_data: None,
-            metadata: Default::default(),
-        };
+        let f = Finding::new(
+            "t1", "Test", "high", "example.com", "path"
+        );
         let json = serde_json::to_string(&f).expect("serialize");
         assert!(
             !json.contains("description"),
@@ -90,11 +126,7 @@ mod tests {
 
     #[test]
     fn test_wasm_output_defaults() {
-        let output = WasmOutput {
-            matched: true,
-            count: 2,
-            findings: vec![],
-        };
+        let output = WasmOutput::new(true);
         let json = serde_json::to_string(&output).expect("serialize");
         assert!(json.contains("\"matched\":true"));
         let back: WasmOutput = serde_json::from_str(&json).expect("deserialize");

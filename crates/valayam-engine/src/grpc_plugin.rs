@@ -11,6 +11,7 @@ use tonic::transport::Channel;
 use valayam_models::error::ScannerError;
 
 /// Documentation for this item.
+#[non_exhaustive]
 pub struct GrpcPluginBridge {
     name: String,
     exe_path: PathBuf,

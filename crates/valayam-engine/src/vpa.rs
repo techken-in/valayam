@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 use zip::ZipArchive;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[non_exhaustive]
 pub enum PluginCapability {
     Http,
     Dns,
@@ -13,12 +14,14 @@ pub enum PluginCapability {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[non_exhaustive]
 pub struct PluginDependency {
     pub name: String,
     pub version_req: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[non_exhaustive]
 pub struct PluginInput {
     pub name: String,
     #[serde(rename = "type")]
@@ -27,6 +30,7 @@ pub struct PluginInput {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[non_exhaustive]
 pub struct PluginOutput {
     pub name: String,
     #[serde(rename = "type")]
@@ -34,6 +38,7 @@ pub struct PluginOutput {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[non_exhaustive]
 pub struct PluginManifest {
     pub name: String,
     pub version: String,
@@ -65,6 +70,7 @@ fn default_api_version() -> String {
 
 #[derive(Debug)]
 /// Documentation for this item.
+#[non_exhaustive]
 pub enum VpaError {
     /// Documentation for this item.
     IoError(std::io::Error),

@@ -2,6 +2,7 @@ use rand::seq::SliceRandom;
 use rand::Rng;
 
 /// User-Agent rotator for browser impersonation
+#[non_exhaustive]
 pub struct UserAgentRotator {}
 
 impl UserAgentRotator {

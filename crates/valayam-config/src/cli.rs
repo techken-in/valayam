@@ -5,12 +5,32 @@ use std::env;
 
 /// Environment-based CLI configuration (VALAYAM_* vars + .env file).
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[non_exhaustive]
 pub struct CliConfig {
     pub valayam_registry_user: Option<String>,
     pub valayam_registry_pass: Option<String>,
     pub valayam_public_key: String,
     pub valayam_log: Option<String>,
     pub otel_exporter_otlp_endpoint: Option<String>,
+}
+
+impl CliConfig {
+    /// Create a new CliConfig.
+    pub fn new(
+        valayam_public_key: impl Into<String>,
+        valayam_registry_user: Option<String>,
+        valayam_registry_pass: Option<String>,
+        valayam_log: Option<String>,
+        otel_exporter_otlp_endpoint: Option<String>,
+    ) -> Self {
+        Self {
+            valayam_registry_user,
+            valayam_registry_pass,
+            valayam_public_key: valayam_public_key.into(),
+            valayam_log,
+            otel_exporter_otlp_endpoint,
+        }
+    }
 }
 
 impl Default for CliConfig {

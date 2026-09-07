@@ -8,6 +8,7 @@ use std::io::{self, BufWriter};
 use std::sync::Mutex;
 use valayam_engine::traits::{FindingOwned, Reporter};
 
+#[non_exhaustive]
 pub struct SarifReporter {
     path: String,
     scanner_version: String,
@@ -15,6 +16,7 @@ pub struct SarifReporter {
 }
 
 impl SarifReporter {
+    /// Create a new SarifReporter.
     pub fn new(path: String, scanner_version: String) -> io::Result<Self> {
         Ok(Self {
             path,

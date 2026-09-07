@@ -11,6 +11,7 @@ pub fn default_schema_version() -> String {
 /// This structure is serialized to JSON for structured logging and can be
 /// converted to other formats like SARIF for integration with security tools.
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[non_exhaustive]
 pub struct ScanResult {
     #[serde(default = "default_schema_version")]
     pub schema_version: String,
@@ -132,15 +133,10 @@ mod tests {
 
     #[test]
     fn test_scan_result_new() {
-        let info = crate::templates::schema::TemplateInfo {
-            name: "SQLi Test".into(),
-            severity: "high".into(),
-            author: None,
-            description: Some("Test for SQL injection".into()),
-            category: None,
-            tags: vec![],
-            compliance: [("owasp".into(), "A1:2017".into())].into(),
-        };
+        let info = crate::templates::schema::TemplateInfo::new("SQLi Test", "high")
+            .with_author(None)
+            .with_description(Some("Test for SQL injection".into()))
+            .with_compliance([("owasp".into(), "A1:2017".into())].into());
         let sr = ScanResult::new("sqli-001", &info, "https://example.com/login");
         assert_eq!(sr.template_id, "sqli-001");
         assert_eq!(sr.template_name, "SQLi Test");

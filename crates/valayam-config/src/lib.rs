@@ -24,6 +24,7 @@ use std::path::{Path, PathBuf};
 /// Top-level Valayam configuration.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
+#[non_exhaustive]
 pub struct ValayamConfig {
     // ── Scan target ──────────────────────────────────────────────────────
     /// Target base URL or hostname.
@@ -137,6 +138,7 @@ impl Default for ValayamConfig {
 
 /// Errors during config validation.
 #[derive(Debug, thiserror::Error)]
+#[non_exhaustive]
 pub enum ConfigError {
     #[error("Template path does not exist: {0}")]
     TemplateNotFound(PathBuf),

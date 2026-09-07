@@ -21,6 +21,7 @@ time = "0.3"
 dashmap = "6.2.1"
 axum = "0.7"
 tracing = "0.1"
+thiserror = "1"
 anyhow.workspace = true
 serde_yaml.workspace = true
 uuid = { version = "1.24.0", features = ["v4"] }

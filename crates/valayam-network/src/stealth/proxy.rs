@@ -45,6 +45,7 @@ struct ProxyState {
 /// Proxies are shuffled and returned in round-robin order, with automatic
 /// skipping of unhealthy proxies.
 #[derive(Clone)]
+#[non_exhaustive]
 pub struct ProxyRotator {
     state: Arc<RwLock<ProxyState>>,
     /// Maximum consecutive failures before marking a proxy unhealthy

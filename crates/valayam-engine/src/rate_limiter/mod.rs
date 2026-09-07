@@ -37,6 +37,7 @@ type GovernorLimiter = GovLimiter<
 /// - Shared across all async tasks via Arc
 /// - Each call to `acquire()` awaits until a token is available
 #[derive(Clone)]
+#[non_exhaustive]
 pub struct RateLimiter {
     limiter: Arc<RwLock<Arc<GovernorLimiter>>>,
     config: Arc<RwLock<RateLimiterConfig>>,
@@ -216,6 +217,7 @@ impl RateLimiter {
 
 /// Statistics for monitoring rate limiter performance
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct RateLimiterStats {
     /// Current effective requests per second (after backoff)
     pub current_rps: f32,
@@ -227,6 +229,25 @@ pub struct RateLimiterStats {
     pub backoff_multiplier: u32,
     /// Seconds since last 429 (if any)
     pub last_429: Option<u64>,
+}
+
+impl RateLimiterStats {
+    /// Create a new RateLimiterStats.
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+
+impl Default for RateLimiterStats {
+    fn default() -> Self {
+        Self {
+            current_rps: 0.0,
+            configured_rps: 0,
+            consecutive_429s: 0,
+            backoff_multiplier: 1,
+            last_429: None,
+        }
+    }
 }
 
 #[cfg(test)]

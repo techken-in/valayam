@@ -1,6 +1,14 @@
 #[derive(Clone, Debug)]
+#[non_exhaustive]
 pub struct CoreConfig {
     pub cisa_kev_url: String,
+}
+
+impl CoreConfig {
+    /// Create a new CoreConfig.
+    pub fn new(cisa_kev_url: impl Into<String>) -> Self {
+        Self { cisa_kev_url: cisa_kev_url.into() }
+    }
 }
 
 impl Default for CoreConfig {

@@ -5,6 +5,7 @@ use url::Url;
 
 /// OCI Manifest representing an artifact
 #[derive(Debug, Serialize, Deserialize)]
+#[non_exhaustive]
 pub struct OciManifest {
     #[serde(rename = "schemaVersion")]
     /// Documentation for this item.
@@ -21,8 +22,22 @@ pub struct OciManifest {
     pub annotations: Option<std::collections::HashMap<String, String>>,
 }
 
+impl OciManifest {
+    /// Create a new OciManifest.
+    pub fn new(schema_version: u32, config: OciDescriptor, layers: Vec<OciDescriptor>) -> Self {
+        Self {
+            schema_version,
+            media_type: None,
+            config,
+            layers,
+            annotations: None,
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 /// Documentation for this item.
+#[non_exhaustive]
 pub struct OciDescriptor {
     #[serde(rename = "mediaType")]
     /// Documentation for this item.
@@ -36,7 +51,20 @@ pub struct OciDescriptor {
     pub annotations: Option<std::collections::HashMap<String, String>>,
 }
 
+impl OciDescriptor {
+    /// Create a new OciDescriptor.
+    pub fn new(media_type: String, digest: String, size: u64) -> Self {
+        Self {
+            media_type,
+            digest,
+            size,
+            annotations: None,
+        }
+    }
+}
+
 /// A lightweight OCI v2 client
+#[non_exhaustive]
 pub struct OciClient {
     client: Client,
     registry: String,

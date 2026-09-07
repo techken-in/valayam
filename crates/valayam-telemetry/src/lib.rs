@@ -9,6 +9,7 @@ use std::path::Path;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, Layer};
 
 /// Opaque guard that keeps file-appender and OTLP resources alive.
+#[non_exhaustive]
 pub struct TelemetryGuard {
     _file_guard: Option<tracing_appender::non_blocking::WorkerGuard>,
 }

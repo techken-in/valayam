@@ -27,6 +27,7 @@ use valayam_models::templates::schema::VulnerabilityTemplate;
 
 /// Configuration for plugin execution retry with exponential backoff.
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct RetryConfig {
     /// Maximum number of retry attempts for transient failures (default: 3).
     pub max_retries: u32,
@@ -57,6 +58,7 @@ impl RetryConfig {
 }
 
 /// Documentation for this item.
+#[non_exhaustive]
 pub struct PluginRegistry {
     core_plugins: Arc<Mutex<Vec<Arc<dyn ScanPlugin>>>>,
     external_plugins: Arc<std::sync::RwLock<Vec<Arc<dyn ScanPlugin>>>>,
@@ -378,21 +380,16 @@ impl PluginRegistry {
             let start = Instant::now();
             match plugin.health_check().await {
                 Ok(()) => {
-                    results.push(PluginHealth {
-                        plugin_name: plugin.name().to_string(),
-                        is_healthy: true,
-                        error: None,
-                        last_checked_ms: start.elapsed().as_millis() as u64,
-                    });
+                    let mut health = PluginHealth::new(plugin.name().to_string(), true);
+                    health.last_checked_ms = start.elapsed().as_millis() as u64;
+                    results.push(health);
                 }
                 Err(e) => {
                     tracing::warn!(plugin = plugin.name(), error = %e, "plugin health check failed");
-                    results.push(PluginHealth {
-                        plugin_name: plugin.name().to_string(),
-                        is_healthy: false,
-                        error: Some(e.to_string()),
-                        last_checked_ms: start.elapsed().as_millis() as u64,
-                    });
+                    let mut health = PluginHealth::new(plugin.name().to_string(), false);
+                    health.error = Some(e.to_string());
+                    health.last_checked_ms = start.elapsed().as_millis() as u64;
+                    results.push(health);
                 }
             }
         }
@@ -521,18 +518,18 @@ impl PluginRegistry {
                     .expect("plugin_name drawn from plugin_name_map keys — guaranteed to exist")
                     .clone();
 
-                let ctx = ScanContext {
-                    scan_id: template
+                let ctx = ScanContext::new(
+                    template
                         .id
                         .parse::<uuid::Uuid>()
                         .unwrap_or_else(|_| uuid::Uuid::new_v4()),
-                    target: target.to_string(),
-                    target_host: target_host.clone(),
-                    template: template.clone(),
-                    variables: variables.clone(),
-                    finding_tx: finding_tx.clone(),
-                    cancellation: cancellation.clone(),
-                };
+                    target.to_string(),
+                    target_host.clone(),
+                    template.clone(),
+                    variables.clone(),
+                    finding_tx.clone(),
+                    cancellation.clone(),
+                );
 
                 // Rate limit before each plugin
                 if let Some(rl) = rate_limiter {
@@ -586,13 +583,13 @@ impl PluginRegistry {
                     unmet_deps = deg,
                     "skipping plugin due to dependency cycle or missing deps"
                 );
-                all_metrics.push(PluginMetrics {
-                    plugin_name: name.to_string(),
-                    target: target.to_string(),
-                    outcome: crate::traits::PluginOutcomeKind::Skipped,
-                    duration: std::time::Duration::ZERO,
-                    finding_count: 0,
-                });
+                all_metrics.push(PluginMetrics::new(
+                    name.to_string(),
+                    target.to_string(),
+                    crate::traits::PluginOutcomeKind::Skipped,
+                    std::time::Duration::ZERO,
+                    0,
+                ));
             }
         }
 
@@ -691,15 +688,15 @@ async fn execute_plugin_isolated(
     };
 
     // We need a fresh ScanContext per attempt since execute() consumes finding_tx by clone
-    let make_ctx = || ScanContext {
-        scan_id: ctx.scan_id,
-        target: ctx.target.clone(),
-        target_host: ctx.target_host.clone(),
-        template: ctx.template.clone(),
-        variables: ctx.variables.clone(),
-        finding_tx: ctx.finding_tx.clone(),
-        cancellation: ctx.cancellation.clone(),
-    };
+    let make_ctx = || ScanContext::new(
+        ctx.scan_id,
+        ctx.target.clone(),
+        ctx.target_host.clone(),
+        ctx.template.clone(),
+        ctx.variables.clone(),
+        ctx.finding_tx.clone(),
+        ctx.cancellation.clone(),
+    );
 
     for attempt in 0..=retry_config.max_retries {
         if attempt > 0 {
@@ -768,13 +765,13 @@ async fn execute_plugin_isolated(
         finding_count,
     );
 
-    PluginMetrics {
-        plugin_name: plugin_name.to_string(),
+    PluginMetrics::new(
+        plugin_name.to_string(),
         target,
-        outcome: outcome_kind,
+        outcome_kind,
         duration,
         finding_count,
-    }
+    )
 }
 
 /// Check whether a plugin's declared API version is compatible with the

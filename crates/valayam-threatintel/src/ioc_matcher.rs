@@ -2,17 +2,16 @@ use dashmap::DashSet;
 
 /// Matches extracted indicators against known threat feeds concurrently.
 #[derive(Default)]
+#[non_exhaustive]
 pub struct IocMatcher {
     pub malicious_ips: DashSet<String>,
     pub malicious_domains: DashSet<String>,
 }
 
 impl IocMatcher {
+    /// Create a new IocMatcher.
     pub fn new() -> Self {
-        Self {
-            malicious_ips: DashSet::new(),
-            malicious_domains: DashSet::new(),
-        }
+        Self::default()
     }
 
     /// Checks if an IP is in the malicious IPs list.

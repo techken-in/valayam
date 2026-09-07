@@ -8,6 +8,7 @@ use std::io::{self, BufWriter};
 use std::sync::Mutex;
 use valayam_engine::traits::{FindingOwned, Reporter};
 
+#[non_exhaustive]
 pub struct JsonReporter {
     path: String,
     scan_id: String,

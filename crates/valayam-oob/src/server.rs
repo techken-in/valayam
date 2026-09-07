@@ -7,6 +7,7 @@ use tokio::sync::Mutex;
 
 /// Represents a single out-of-band interaction captured by the server.
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct OobInteraction {
     /// Protocol that triggered the interaction ("http" or "dns")
     pub protocol: String,
@@ -24,8 +25,32 @@ pub struct OobInteraction {
     pub extracted_payload: Option<String>,
 }
 
+impl OobInteraction {
+    /// Create a new OobInteraction.
+    pub fn new(
+        protocol: impl Into<String>,
+        source_ip: impl Into<String>,
+        source_port: u16,
+        timestamp: chrono::DateTime<chrono::Utc>,
+        raw_request: impl Into<String>,
+        correlation_id: Option<String>,
+        extracted_payload: Option<String>,
+    ) -> Self {
+        Self {
+            protocol: protocol.into(),
+            source_ip: source_ip.into(),
+            source_port,
+            timestamp,
+            raw_request: raw_request.into(),
+            correlation_id,
+            extracted_payload,
+        }
+    }
+}
+
 /// Configuration for the out-of-band interaction server.
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct OobServerConfig {
     /// Address to bind the HTTP callback server (default: "0.0.0.0:8080")
     pub http_bind: String,
@@ -47,6 +72,13 @@ pub struct OobServerConfig {
     pub tls_config: Option<Arc<rustls::ServerConfig>>,
 }
 
+impl OobServerConfig {
+    /// Create a new OobServerConfig with defaults.
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+
 impl Default for OobServerConfig {
     fn default() -> Self {
         Self {
@@ -64,6 +96,7 @@ impl Default for OobServerConfig {
 }
 
 /// Embedded HTTP/DNS Server for Out-of-Band interactions.
+#[non_exhaustive]
 pub struct OobServer {
     /// Server configuration
     config: OobServerConfig,
@@ -657,11 +690,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_oob_server_start_shutdown() {
-        let config = OobServerConfig {
-            http_bind: "127.0.0.1:0".to_string(),
-            dns_bind: "127.0.0.1:0".to_string(),
-            ..Default::default()
-        };
+        let config = OobServerConfig::new();
         let server = OobServer::new(config);
         let result = server.start().await;
         assert!(result.is_ok() || result.is_err());

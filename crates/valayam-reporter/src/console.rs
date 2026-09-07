@@ -4,8 +4,18 @@ use valayam_engine::traits::{FindingOwned, Reporter};
 
 /// Console reporter that renders vulnerability findings as visually rich,
 /// boxed cards with severity badges, timestamps, and optional metadata.
+#[non_exhaustive]
 pub struct ConsoleReporter {
     finding_counter: AtomicUsize,
+}
+
+impl ConsoleReporter {
+    /// Create a new ConsoleReporter.
+    pub fn new() -> Self {
+        Self {
+            finding_counter: AtomicUsize::new(0),
+        }
+    }
 }
 
 impl Default for ConsoleReporter {
@@ -27,6 +37,7 @@ impl ConsoleReporter {
             Low => " LOW ".on_green().white().bold(),
             Info => " INFO ".on_blue().white().bold(),
             Unknown => " UNKNOWN ".normal().dimmed(),
+            _ => " UNKNOWN ".normal().dimmed(),
         }
     }
 
@@ -40,6 +51,7 @@ impl ConsoleReporter {
             Low => "🟢",
             Info => "🔵",
             Unknown => "⚪",
+            _ => "⚪",
         }
     }
 

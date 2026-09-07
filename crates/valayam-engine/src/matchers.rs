@@ -3,6 +3,7 @@
 use super::traits::Matcher;
 
 /// Regex matcher on raw bytes — no UTF-8 conversion.
+#[non_exhaustive]
 pub struct RegexMatcher {
     patterns: Vec<regex::bytes::Regex>,
     label: String,
@@ -38,6 +39,7 @@ impl Matcher for RegexMatcher {
 }
 
 /// HTTP status code matcher.
+#[non_exhaustive]
 pub struct StatusMatcher {
     allowed: Vec<u16>,
 }
@@ -63,6 +65,7 @@ impl Matcher for StatusMatcher {
 }
 
 /// Fast byte-level substring search.
+#[non_exhaustive]
 pub struct WordMatcher {
     words: Vec<Vec<u8>>,
 }
@@ -89,6 +92,7 @@ impl Matcher for WordMatcher {
 
 /// AND/OR combinator.
 /// Documentation for this item.
+#[non_exhaustive]
 pub enum MatchCondition {
     /// All matchers must pass.
     And,
@@ -97,6 +101,7 @@ pub enum MatchCondition {
 }
 
 /// Documentation for this item.
+#[non_exhaustive]
 pub struct CompositeMatcher {
     matchers: Vec<Box<dyn Matcher>>,
     condition: MatchCondition,

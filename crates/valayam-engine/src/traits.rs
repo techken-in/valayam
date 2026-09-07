@@ -15,6 +15,7 @@ pub const MINIMUM_API_VERSION: &str = "1.0";
 
 /// Namespaced variable context for template `{{placeholder}}` resolution.
 #[derive(Debug, Clone, Default)]
+#[non_exhaustive]
 pub struct VariableScope {
     global: std::collections::HashMap<String, String>,
     scoped: std::collections::HashMap<String, std::collections::HashMap<String, String>>,
@@ -78,6 +79,7 @@ impl VariableScope {
 /// All fields are behind `Arc`, `RwLock`, or owned `String` so the context
 /// is safe to share across concurrent plugin executions and across `catch_unwind`
 /// boundaries via `SafePluginFuture`.
+#[non_exhaustive]
 pub struct ScanContext {
     /// Unique scan session identifier, propagated through the entire MPSC pipeline
     /// for audit trail and provenance tracking.
@@ -97,6 +99,27 @@ pub struct ScanContext {
 }
 
 impl ScanContext {
+    /// Create a new ScanContext with all required fields.
+    pub fn new(
+        scan_id: uuid::Uuid,
+        target: String,
+        target_host: String,
+        template: Arc<valayam_models::templates::schema::VulnerabilityTemplate>,
+        variables: Arc<RwLock<VariableScope>>,
+        finding_tx: mpsc::Sender<FindingOwned>,
+        cancellation: CancellationToken,
+    ) -> Self {
+        Self {
+            scan_id,
+            target,
+            target_host,
+            template,
+            variables,
+            finding_tx,
+            cancellation,
+        }
+    }
+
     /// Documentation for this item.
     pub async fn snapshot_variables(&self) -> std::collections::HashMap<String, String> {
         self.variables.read().await.to_flat_map()
@@ -125,6 +148,7 @@ impl ScanContext {
 // ─── PluginOutcome & Metrics ────────────────────────────────────────────
 
 #[derive(Debug)]
+#[non_exhaustive]
 /// Documentation for this item.
 pub enum PluginOutcome {
     /// Documentation for this item.
@@ -427,15 +451,15 @@ mod tests {
             m
         })));
 
-        let ctx = ScanContext {
-            scan_id: uuid::Uuid::default(),
-            target: "https://example.com".into(),
-            target_host: "example.com".into(),
-            template: Arc::new(valayam_models::templates::schema::VulnerabilityTemplate::default()),
-            variables: vars,
-            finding_tx: mpsc::channel(10).0,
-            cancellation: CancellationToken::new(),
-        };
+        let ctx = ScanContext::new(
+            uuid::Uuid::default(),
+            "https://example.com".into(),
+            "example.com".into(),
+            Arc::new(valayam_models::templates::schema::VulnerabilityTemplate::default()),
+            vars,
+            mpsc::channel(10).0,
+            CancellationToken::new(),
+        );
 
         let snapshot = ctx.snapshot_variables().await;
         assert_eq!(
@@ -448,15 +472,15 @@ mod tests {
     #[tokio::test]
     async fn test_scan_context_set_variable() -> anyhow::Result<()> {
         let vars = Arc::new(RwLock::new(VariableScope::new(HashMap::new())));
-        let ctx = ScanContext {
-            scan_id: uuid::Uuid::default(),
-            target: "https://example.com".into(),
-            target_host: "example.com".into(),
-            template: Arc::new(valayam_models::templates::schema::VulnerabilityTemplate::default()),
-            variables: vars.clone(),
-            finding_tx: mpsc::channel(10).0,
-            cancellation: CancellationToken::new(),
-        };
+        let ctx = ScanContext::new(
+            uuid::Uuid::default(),
+            "https://example.com".into(),
+            "example.com".into(),
+            Arc::new(valayam_models::templates::schema::VulnerabilityTemplate::default()),
+            vars.clone(),
+            mpsc::channel(10).0,
+            CancellationToken::new(),
+        );
 
         ctx.set_variable("test_plugin", "extracted", "secret_value".to_string())
             .await;
@@ -471,15 +495,15 @@ mod tests {
     #[tokio::test]
     async fn test_scan_context_is_cancelled() {
         let token = CancellationToken::new();
-        let ctx = ScanContext {
-            scan_id: uuid::Uuid::default(),
-            target: "https://example.com".into(),
-            target_host: "example.com".into(),
-            template: Arc::new(valayam_models::templates::schema::VulnerabilityTemplate::default()),
-            variables: Arc::new(RwLock::new(VariableScope::new(HashMap::new()))),
-            finding_tx: mpsc::channel(10).0,
-            cancellation: token.clone(),
-        };
+        let ctx = ScanContext::new(
+            uuid::Uuid::default(),
+            "https://example.com".into(),
+            "example.com".into(),
+            Arc::new(valayam_models::templates::schema::VulnerabilityTemplate::default()),
+            Arc::new(RwLock::new(VariableScope::new(HashMap::new()))),
+            mpsc::channel(10).0,
+            token.clone(),
+        );
         assert!(!ctx.is_cancelled());
         token.cancel();
         assert!(ctx.is_cancelled());
@@ -487,12 +511,12 @@ mod tests {
 
     #[tokio::test]
     async fn test_scan_context_emit_finding() -> anyhow::Result<()> {
-        let (tx, mut rx) = mpsc::channel(10);
-        let ctx = ScanContext {
-            scan_id: uuid::Uuid::default(),
-            target: "https://example.com".into(),
-            target_host: "example.com".into(),
-            template: Arc::new(valayam_models::templates::schema::VulnerabilityTemplate {
+        let (tx, _rx) = mpsc::channel(10);
+        let ctx = ScanContext::new(
+            uuid::Uuid::default(),
+            "https://example.com".into(),
+            "example.com".into(),
+            Arc::new(valayam_models::templates::schema::VulnerabilityTemplate {
                 id: "test".into(),
                 info: valayam_models::templates::schema::TemplateInfo {
                     name: "Test".into(),
@@ -505,10 +529,10 @@ mod tests {
                 },
                 ..valayam_models::templates::schema::VulnerabilityTemplate::default()
             }),
-            variables: Arc::new(RwLock::new(VariableScope::new(HashMap::new()))),
-            finding_tx: tx,
-            cancellation: CancellationToken::new(),
-        };
+            Arc::new(RwLock::new(VariableScope::new(HashMap::new()))),
+            tx,
+            CancellationToken::new(),
+        );
 
         let finding = FindingOwned {
             scan_id: uuid::Uuid::default(),

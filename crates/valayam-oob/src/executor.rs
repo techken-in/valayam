@@ -4,6 +4,7 @@ use tokio::time::{sleep, Duration};
 
 /// Retry configuration for OOB polling.
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct OobPollConfig {
     /// Base sleep between retries (default: 1s).
     pub base_interval: Duration,
@@ -13,6 +14,13 @@ pub struct OobPollConfig {
     pub backoff_factor: f64,
     /// Jitter fraction to add [0, factor] (default: 0.1).
     pub jitter_factor: f64,
+}
+
+impl OobPollConfig {
+    /// Create a new OobPollConfig with defaults.
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 
 impl Default for OobPollConfig {
@@ -27,6 +35,7 @@ impl Default for OobPollConfig {
 }
 
 /// Executes OOB polling to check if an interaction has occurred.
+#[non_exhaustive]
 pub struct OobExecutor;
 
 impl OobExecutor {
@@ -101,12 +110,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_wait_for_interaction_timeout() {
-        let config = OobPollConfig {
-            base_interval: Duration::from_millis(10),
-            max_interval: Duration::from_millis(50),
-            backoff_factor: 1.0,
-            jitter_factor: 0.0,
-        };
+        let config = OobPollConfig::new();
 
         let deadline = tokio::time::Instant::now() + Duration::from_millis(100);
         let mut interval = config.base_interval;

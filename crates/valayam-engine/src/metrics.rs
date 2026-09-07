@@ -9,6 +9,15 @@ use prometheus::{
     register_histogram_vec, CounterVec, Gauge, GaugeVec, Histogram, HistogramVec,
 };
 
+#[non_exhaustive]
+pub struct MetricsSummary {
+    pub plugin_duration_seconds: f64,
+    pub plugin_outcome_total: u64,
+    pub plugin_finding_total: u64,
+    pub scan_duration_seconds: f64,
+    pub findings_total: u64,
+}
+
 // ── Plugin execution ─────────────────────────────────────────────────────────
 
 lazy_static::lazy_static! {

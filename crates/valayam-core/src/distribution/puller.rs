@@ -5,6 +5,7 @@ use std::fs;
 use std::path::PathBuf;
 
 /// A puller that fetches signed Wasm plugins via HTTP and caches them locally.
+#[non_exhaustive]
 pub struct PluginPuller {
     client: Client,
     cache_dir: PathBuf,

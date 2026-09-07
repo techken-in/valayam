@@ -9,6 +9,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[non_exhaustive]
 pub struct ScanCheckpoint {
     pub id: String,
     pub pending_tasks: Vec<(String, String)>,
@@ -19,6 +20,7 @@ pub struct ScanCheckpoint {
     pub updated_at: u64,
 }
 
+#[non_exhaustive]
 pub struct StateDB {
     base_dir: PathBuf,
 }

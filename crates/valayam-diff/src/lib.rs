@@ -3,6 +3,7 @@ use std::collections::{HashMap, HashSet};
 use valayam_models::finding::FindingOwned;
 
 #[derive(Debug, Serialize, Deserialize)]
+#[non_exhaustive]
 pub enum FindingStatus {
     New,
     Resolved,
@@ -10,6 +11,7 @@ pub enum FindingStatus {
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
+#[non_exhaustive]
 pub struct DiffReport {
     pub new: Vec<FindingOwned>,
     pub resolved: Vec<FindingOwned>,

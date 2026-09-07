@@ -13,3 +13,11 @@ pub mod result;
 pub mod scan_result_bridge;
 
 pub mod reporters;
+
+/// Summary of core domain types — forward-compatible.
+#[non_exhaustive]
+pub struct CoreDomainSummary {
+    pub plugins_registered: usize,
+    pub error_types: usize,
+    pub reporters_available: usize,
+}

@@ -3,6 +3,7 @@ use rand::{distributions::Alphanumeric, Rng};
 use std::collections::HashSet;
 
 /// Correlation engine for generating short-lived OOB IDs.
+#[non_exhaustive]
 pub struct CorrelationEngine;
 
 static GENERATED_IDS: std::sync::LazyLock<Mutex<HashSet<String>>> =

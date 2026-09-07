@@ -4,15 +4,33 @@ use rustls::ServerConfig;
 use std::fs;
 use std::path::PathBuf;
 use std::sync::Arc;
+use thiserror::Error;
 use time::{Duration, OffsetDateTime};
 use tokio_rustls::TlsAcceptor;
 
+#[derive(Error, Debug)]
+#[non_exhaustive]
+pub enum CertAuthError {
+    #[error("IO error: {0}")]
+    Io(#[from] std::io::Error),
+
+    #[error("Certificate generation failed: {0}")]
+    CertGeneration(#[from] rcgen::Error),
+
+    #[error("TLS configuration failed: {0}")]
+    TlsConfig(String),
+
+    #[error("Failed to parse certificate PEM: {0}")]
+    PemParse(String),
+}
+
+#[non_exhaustive]
 pub struct CertificateAuthority {
     ca_cert: Certificate,
 }
 
 impl CertificateAuthority {
-    pub fn new() -> Result<Self, anyhow::Error> {
+    pub fn new() -> Result<Self, CertAuthError> {
         let home_dir = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
         let valayam_dir = home_dir.join(".valayam");
 
@@ -51,7 +69,7 @@ impl CertificateAuthority {
         Ok(Self { ca_cert })
     }
 
-    pub fn gen_acceptor_for_domain(&self, domain: &str) -> Result<TlsAcceptor, anyhow::Error> {
+    pub fn gen_acceptor_for_domain(&self, domain: &str) -> Result<TlsAcceptor, CertAuthError> {
         let mut params = CertificateParams::default();
         params
             .distinguished_name
@@ -69,19 +87,20 @@ impl CertificateAuthority {
         let rustls_cert: CertificateDer<'static> = rustls_pemfile::certs(&mut cert_pem.as_bytes())
             .filter_map(Result::ok)
             .next()
-            .ok_or_else(|| anyhow::anyhow!("failed to parse generated leaf certificate PEM"))?
+            .ok_or_else(|| CertAuthError::PemParse("failed to parse generated leaf certificate PEM".to_string()))?
             .into_owned();
 
         let rustls_key: PrivateKeyDer<'static> =
             rustls_pemfile::pkcs8_private_keys(&mut key_pem.as_bytes())
                 .filter_map(Result::ok)
                 .next()
-                .ok_or_else(|| anyhow::anyhow!("failed to parse generated leaf key PEM"))?
+                .ok_or_else(|| CertAuthError::PemParse("failed to parse generated leaf key PEM".to_string()))?
                 .into();
 
         let server_config = ServerConfig::builder()
             .with_no_client_auth()
-            .with_single_cert(vec![rustls_cert], rustls_key)?;
+            .with_single_cert(vec![rustls_cert], rustls_key)
+            .map_err(|e| CertAuthError::TlsConfig(e.to_string()))?;
 
         Ok(TlsAcceptor::from(Arc::new(server_config)))
     }

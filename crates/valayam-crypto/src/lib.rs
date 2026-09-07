@@ -6,6 +6,7 @@
 use ed25519_dalek::{Signature, Signer, SigningKey, Verifier, VerifyingKey};
 use rand_core::OsRng;
 
+#[non_exhaustive]
 pub struct PluginCrypto;
 
 impl PluginCrypto {

@@ -12,12 +12,29 @@ use valayam_proto::reflection::v1::server_reflection_server::ServerReflectionSer
 /// Optional TLS configuration for the gRPC control plane.
 /// When `ca_pem` is provided, the server requires client certificates signed by that CA (mTLS).
 #[derive(Clone, Debug)]
+#[non_exhaustive]
 pub struct TlsConfig {
     pub cert_pem: Vec<u8>,
     pub key_pem: Vec<u8>,
     pub ca_pem: Option<Vec<u8>>,
 }
 
+impl TlsConfig {
+    /// Create a new TlsConfig.
+    pub fn new(cert_pem: Vec<u8>, key_pem: Vec<u8>, ca_pem: Option<Vec<u8>>) -> Self {
+        Self {
+            cert_pem,
+            key_pem,
+            ca_pem,
+        }
+    }
+}
+    pub cert_pem: Vec<u8>,
+    pub key_pem: Vec<u8>,
+    pub ca_pem: Option<Vec<u8>>,
+}
+
+#[non_exhaustive]
 pub struct TelemetryService {
     state_tx: Option<watch::Sender<ScanState>>,
     cancellation_token: Option<CancellationToken>,

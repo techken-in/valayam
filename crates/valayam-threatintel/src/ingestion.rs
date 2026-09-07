@@ -4,6 +4,7 @@ use std::collections::HashSet;
 use crate::config::CoreConfig;
 
 /// Automatically ingests indicators from external threat feeds.
+#[non_exhaustive]
 pub struct FeedIngestor;
 
 impl FeedIngestor {

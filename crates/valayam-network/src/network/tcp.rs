@@ -7,6 +7,7 @@ use tokio::time::timeout;
 
 /// Result of a TCP port scan, including optional banner data.
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct PortResult {
     pub port: u16,
     pub banner: Option<String>,
@@ -14,8 +15,16 @@ pub struct PortResult {
     pub service_info: ServiceInfo,
 }
 
+impl PortResult {
+    /// Create a new PortResult
+    pub fn new(port: u16, banner: Option<String>, service_info: ServiceInfo) -> Self {
+        Self { port, banner, service_info }
+    }
+}
+
 /// Additional service information discovered during scanning
 #[derive(Debug, Clone, Default)]
+#[non_exhaustive]
 pub struct ServiceInfo {
     /// Detected service name (HTTP, SSH, MySQL, etc.)
     pub service_name: Option<String>,
@@ -33,8 +42,16 @@ pub struct ServiceInfo {
     pub tls_info: Option<TlsInfo>,
 }
 
+impl ServiceInfo {
+    /// Create a new ServiceInfo
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+
 /// TLS/SSL information for a service
 #[derive(Debug, Clone, Default)]
+#[non_exhaustive]
 pub struct TlsInfo {
     /// TLS version negotiated
     pub version: Option<String>,
@@ -46,6 +63,13 @@ pub struct TlsInfo {
     pub is_self_signed: bool,
     /// Whether the certificate is trusted
     pub is_trusted: bool,
+}
+
+impl TlsInfo {
+    /// Create a new TlsInfo
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 
 /// Parses a list of port strings, expanding ranges into individual port numbers.
@@ -102,10 +126,7 @@ fn detect_service_from_banner(port: u16, banner: &str) -> ServiceInfo {
 
         // Check for HTTPS indicators
         if banner.contains("HTTPS") || banner.contains("TLS") || banner.contains("SSL") {
-            info.tls_info = Some(TlsInfo {
-                is_trusted: false, // Would need actual TLS check
-                ..Default::default()
-            });
+            info.tls_info = Some(TlsInfo::new());
         }
     }
     // SSH detection
@@ -353,14 +374,14 @@ pub async fn scan_ports(
                             // Port is open according to SYN-ACK
                             // We can't easily grab banners passively from a raw SYN-ACK without completing the handshake.
                             // We return basic information.
-                            return Some(PortResult {
+                            return Some(PortResult::new(
                                 port,
-                                banner: None,
-                                service_info: ServiceInfo {
+                                None,
+                                ServiceInfo {
                                     service_name: Some("unknown".to_string()),
                                     ..Default::default()
                                 },
-                            });
+                            ));
                         }
                         Ok(false) => {
                             // Port is closed or filtered
@@ -438,11 +459,7 @@ pub async fn scan_ports(
             }
 
             // Build final result
-            Some(PortResult {
-                port,
-                banner,
-                service_info,
-            })
+            Some(PortResult::new(port, banner, service_info))
         })
     });
 
