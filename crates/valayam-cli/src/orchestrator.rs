@@ -77,6 +77,7 @@ impl SeverityCounts {
             Severity::Low => self.low += 1,
             Severity::Info => self.info += 1,
             Severity::Unknown => self.unknown += 1,
+            _ => self.unknown += 1,
         }
     }
 
@@ -487,11 +488,10 @@ pub async fn run_scan_with_job_id(
         } else {
             args.plugin_allow_host.clone()
         };
-        let plugin_config = PluginConfig {
-            memory_max_pages: (args.plugin_memory_limit as u64 * 1024 * 1024 / 65536) as u32,
-            timeout_ms: args.plugin_timeout * 1000,
-            allowed_hosts,
-        };
+        let plugin_config = PluginConfig::new()
+            .with_memory_max_pages((args.plugin_memory_limit as u64 * 1024 * 1024 / 65536) as u32)
+            .with_timeout_ms(args.plugin_timeout * 1000)
+            .with_allowed_hosts(allowed_hosts);
         reg.set_plugin_config(plugin_config);
 
         // In offline mode, set the wasm_cache directory to the bundle's wasm_cache

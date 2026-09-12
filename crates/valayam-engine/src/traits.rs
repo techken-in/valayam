@@ -79,7 +79,6 @@ impl VariableScope {
 /// All fields are behind `Arc`, `RwLock`, or owned `String` so the context
 /// is safe to share across concurrent plugin executions and across `catch_unwind`
 /// boundaries via `SafePluginFuture`.
-#[non_exhaustive]
 pub struct ScanContext {
     /// Unique scan session identifier, propagated through the entire MPSC pipeline
     /// for audit trail and provenance tracking.

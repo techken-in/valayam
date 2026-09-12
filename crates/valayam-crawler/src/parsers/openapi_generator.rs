@@ -68,15 +68,7 @@ pub fn generate_template_from_openapi(
 
     Ok(VulnerabilityTemplate {
         id: "generated-openapi-scan".to_string(),
-        info: TemplateInfo {
-            name: title.to_string(),
-            severity: "Info".to_string(),
-            category: None,
-            description,
-            compliance: Default::default(),
-            author: None,
-            tags: vec![],
-        },
+        info: TemplateInfo::new(title.to_string(), "Info").with_description(description),
         requests,
         ..Default::default()
     })

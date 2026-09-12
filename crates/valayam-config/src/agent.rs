@@ -104,6 +104,33 @@ pub struct AgentJobResult {
     pub job_token: Option<String>,
 }
 
+impl AgentJobResult {
+    /// Create a new AgentJobResult.
+    pub fn new(
+        job_id: impl Into<String>,
+        status: impl Into<String>,
+        started_at: impl Into<String>,
+        completed_at: impl Into<String>,
+        worker_id: impl Into<String>,
+        metrics: serde_json::Value,
+        findings: Vec<serde_json::Value>,
+        errors: Vec<serde_json::Value>,
+        job_token: Option<String>,
+    ) -> Self {
+        Self {
+            job_id: job_id.into(),
+            status: status.into(),
+            started_at: started_at.into(),
+            completed_at: completed_at.into(),
+            worker_id: worker_id.into(),
+            metrics,
+            findings,
+            errors,
+            job_token,
+        }
+    }
+}
+
 /// Heartbeat payload pushed to the platform every N seconds.
 #[derive(Debug, Serialize)]
 #[non_exhaustive]
@@ -117,6 +144,33 @@ pub struct AgentHeartbeat {
     pub uptime_secs: u64,
     pub plugins_loaded: u32,
     pub templates_cached: u32,
+}
+
+impl AgentHeartbeat {
+    /// Create a new AgentHeartbeat.
+    pub fn new(
+        worker_id: impl Into<String>,
+        version: impl Into<String>,
+        status: impl Into<String>,
+        current_job_id: Option<String>,
+        cpu_usage_pct: f32,
+        memory_usage_pct: f32,
+        uptime_secs: u64,
+        plugins_loaded: u32,
+        templates_cached: u32,
+    ) -> Self {
+        Self {
+            worker_id: worker_id.into(),
+            version: version.into(),
+            status: status.into(),
+            current_job_id,
+            cpu_usage_pct,
+            memory_usage_pct,
+            uptime_secs,
+            plugins_loaded,
+            templates_cached,
+        }
+    }
 }
 
 /// Response from `POST /jobs/poll` — either a job or a `no-content` signal.

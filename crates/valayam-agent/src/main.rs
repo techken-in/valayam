@@ -38,20 +38,17 @@ async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt::init();
     let args = Args::parse();
 
-    let cfg = AgentConfig {
-        platform_url: args.platform_url,
-        worker_id: args
-            .worker_id
-            .unwrap_or_else(|| uuid::Uuid::new_v4().to_string()),
-        poll_interval_secs: args.poll_interval_secs,
-        heartbeat_interval_secs: args.heartbeat_interval_secs,
-        capabilities: args
-            .capabilities
+    let cfg = AgentConfig::new(
+        args.platform_url,
+        args.worker_id.unwrap_or_else(|| uuid::Uuid::new_v4().to_string()),
+        args.poll_interval_secs,
+        args.heartbeat_interval_secs,
+        args.capabilities
             .split(',')
             .map(|s| s.trim().to_string())
             .collect(),
-        job_secret: std::env::var("PLATFORM_JOB_SECRET").unwrap_or_default(),
-    };
+        std::env::var("PLATFORM_JOB_SECRET").unwrap_or_default(),
+    );
 
     let cancel = CancellationToken::new();
     let start_time = Instant::now();
@@ -263,21 +260,21 @@ async fn execute_and_report(
 
     let token = job.auth.as_ref().map(|a| a.job_token.clone());
 
-    let result = AgentJobResult {
-        job_id: job.job_id.clone(),
-        status: "completed".into(),
+    let result = AgentJobResult::new(
+        job.job_id.clone(),
+        "completed",
         started_at,
         completed_at,
-        worker_id: cfg.worker_id.clone(),
-        metrics: serde_json::json!({
+        cfg.worker_id.clone(),
+        serde_json::json!({
             "duration_secs": duration_secs,
             "findings_count": findings.len(),
             "templates_executed": job.templates.len(),
         }),
         findings,
-        errors: vec![],
-        job_token: token,
-    };
+        vec![],
+        token,
+    );
 
     let url = format!(
         "{}/api/v1/jobs/{}/results",
@@ -323,21 +320,17 @@ async fn send_heartbeat(
     #[cfg(not(target_os = "linux"))]
     let (cpu_pct, mem_pct) = (0.0, 0.0);
 
-    let heartbeat = AgentHeartbeat {
-        worker_id: cfg.worker_id.clone(),
-        version: env!("CARGO_PKG_VERSION").to_string(),
-        status: if current_job_id.is_some() {
-            "scanning".to_string()
-        } else {
-            "idle".to_string()
-        },
-        current_job_id: current_job_id.clone(),
-        cpu_usage_pct: cpu_pct,
-        memory_usage_pct: mem_pct,
-        uptime_secs: uptime,
-        plugins_loaded: 0,
-        templates_cached: 0,
-    };
+    let heartbeat = AgentHeartbeat::new(
+        cfg.worker_id.clone(),
+        env!("CARGO_PKG_VERSION"),
+        if current_job_id.is_some() { "scanning" } else { "idle" },
+        current_job_id.clone(),
+        cpu_pct,
+        mem_pct,
+        uptime,
+        0,
+        0,
+    );
 
     let url = format!(
         "{}/api/v1/workers/{}/heartbeat",

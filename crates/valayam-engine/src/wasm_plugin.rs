@@ -53,13 +53,6 @@ impl PluginConfig {
     }
 }
 
-impl PluginConfig {
-    /// Create a new PluginConfig.
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-
 impl Default for PluginConfig {
     fn default() -> Self {
         Self {

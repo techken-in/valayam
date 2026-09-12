@@ -29,10 +29,6 @@ impl TlsConfig {
         }
     }
 }
-    pub cert_pem: Vec<u8>,
-    pub key_pem: Vec<u8>,
-    pub ca_pem: Option<Vec<u8>>,
-}
 
 #[non_exhaustive]
 pub struct TelemetryService {

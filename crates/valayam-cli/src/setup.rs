@@ -92,15 +92,12 @@ pub fn generate_master_template(plugins: &[String]) -> valayam_models::templates
 
     let mut template = VulnerabilityTemplate::empty();
     template.id = "dynamic-master-scan".to_string();
-    template.info = TemplateInfo {
-        name: "Plugin-Driven Master Scan".to_string(),
-        severity: "info".to_string(),
-        author: None,
-        description: Some("Dynamically generated template that runs all discovered plugins".to_string()),
-        category: None,
-        tags: vec![],
-        compliance: Default::default(),
-    };
+    template.info = TemplateInfo::new("Plugin-Driven Master Scan", "info")
+        .with_author(None)
+        .with_description(Some("Dynamically generated template that runs all discovered plugins".to_string()))
+        .with_category(None)
+        .with_tags(vec![])
+        .with_compliance(Default::default());
     
     // Add every loaded plugin to the template
     for plugin_id in plugins {
@@ -242,7 +239,7 @@ pub fn init_http_client(
         None,
         None,
         None,
-        Some(SsrfConfig { allow_internal }),
+        Some(SsrfConfig::new(allow_internal)),
     )?))
 }
 
@@ -276,11 +273,7 @@ pub fn load_tls_config(
                     key_path
                 );
             }
-            Ok(Some(valayam_api::TlsConfig {
-                cert_pem,
-                key_pem,
-                ca_pem,
-            }))
+            Ok(Some(valayam_api::TlsConfig::new(cert_pem, key_pem, ca_pem)))
         }
         _ => Ok(None),
     }

@@ -5,7 +5,6 @@ use std::fmt::Debug;
 use crate::testing_category::TestingCategory;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
-#[non_exhaustive]
 pub struct TemplateInfo {
     pub name: String,
     pub severity: String,

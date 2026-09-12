@@ -363,7 +363,6 @@ impl ScanPlugin for SchemaDriftPlugin {
 }
 
 /// Documentation for this item.
-#[non_exhaustive]
 pub struct DnsAuditPlugin;
 #[async_trait]
 impl ScanPlugin for DnsAuditPlugin {
@@ -410,7 +409,6 @@ impl ScanPlugin for DnsAuditPlugin {
 }
 
 /// Documentation for this item.
-#[non_exhaustive]
 pub struct PortScanPlugin;
 #[async_trait]
 impl ScanPlugin for PortScanPlugin {
@@ -578,7 +576,6 @@ impl ScanPlugin for OobPlugin {
 }
 
 /// Documentation for this item.
-#[non_exhaustive]
 pub struct ShellsPlugin;
 #[async_trait]
 impl ScanPlugin for ShellsPlugin {

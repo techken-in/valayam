@@ -211,15 +211,10 @@ async fn generate_template(uri: &str, method: &str, body: &str) -> std::io::Resu
 
     let template = VulnerabilityTemplate {
         id: template_id.clone(),
-        info: TemplateInfo {
-            name: format!("Auto-generated MITM template for {}", uri),
-            severity: "Info".to_string(),
-            description: Some("Automatically captured via proxy".into()),
-            category: None,
-            compliance: Default::default(),
-            author: None,
-            tags: vec![],
-        },
+        info: TemplateInfo::new(
+            format!("Auto-generated MITM template for {}", uri),
+            "Info"
+        ).with_description(Some("Automatically captured via proxy".into())),
         auth: None,
         requests: vec![http_req],
         network: vec![],
