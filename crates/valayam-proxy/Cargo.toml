@@ -8,18 +8,18 @@ edition.workspace = true
 valayam-network = { workspace = true }
 valayam-models = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
-hyper = { version = "0.14", features = ["full"] }
+hyper = { version = "1.10", features = ["full"] }
 reqwest = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-rcgen = "0.12"
+rcgen = "0.14"
 rustls.workspace = true
 rustls-pemfile.workspace = true
 tokio-rustls.workspace = true
 dirs = "6.0"
 time = "0.3"
 dashmap = "6.2.1"
-axum = "0.7"
+axum = "0.8"
 tracing = "0.1"
 anyhow.workspace = true
 serde_yaml.workspace = true
