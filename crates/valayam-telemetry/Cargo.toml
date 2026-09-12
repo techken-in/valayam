@@ -8,8 +8,8 @@ edition.workspace = true
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["json", "registry", "env-filter"] }
 tracing-appender = "0.2.5"
-tracing-opentelemetry = "0.22"
-opentelemetry = "0.21"
-opentelemetry_sdk = { version = "0.21", features = ["rt-tokio"] }
-opentelemetry-otlp = "0.14"
+tracing-opentelemetry = "0.33"
+opentelemetry = "0.32"
+opentelemetry_sdk = { version = "0.32", features = ["rt-tokio"] }
+opentelemetry-otlp = "0.32"
 tokio = { workspace = true }

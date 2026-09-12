@@ -13,7 +13,7 @@ valayam-engine = { path = "../valayam-engine" }
 valayam-models = { path = "../valayam-models" }
 valayam-common = { path = "../valayam-common" }
 tokio = { workspace = true, features = ["full"] }
-axum = "0.7"
+axum = "0.8"
 reqwest = { workspace = true }
 tracing = "0.1"
 assert_cmd = "2.2.2"

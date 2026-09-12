@@ -17,8 +17,8 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 regex = "1.10"
 anyhow = "1.0"
-hickory-resolver = "0.24"
-x509-parser = "0.16"
+hickory-resolver = "0.26"
+x509-parser = "0.18"
 rustls = { version = "0.23", features = ["ring"] }
 tokio-rustls = "0.26"
 tracing = "0.1"
