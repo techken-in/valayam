@@ -22,7 +22,7 @@ jobs:
         output: "report.html"
 
     - name: Upload HTML Report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v7
       with:
         name: valayam-report
         path: report.html
