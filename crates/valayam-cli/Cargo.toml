@@ -29,25 +29,25 @@ serde_json = { workspace = true }
 tracing = "0.1.44"
 tonic = { workspace = true }
 prost = { workspace = true }
-rcgen = "0.12"
+rcgen = "0.14"
 tokio-rustls = { workspace = true }
 rustls = { workspace = true }
 rustls-pemfile = { workspace = true }
-dirs = "5.0"
+dirs = "6.0"
 time = "0.3"
 reqwest = { workspace = true }
-hyper = { version = "0.14", features = ["full"] }
+hyper = { version = "1.10", features = ["full"] }
 serde_yaml = { workspace = true }
 serde = { version = "1.0", features = ["derive"] }
 genpdf = "0.2.0"
 zip.workspace = true
-ed25519-dalek = { version = "2.1.1", features = ["rand_core"] }
+ed25519-dalek = { version = "3.0.0", features = ["rand_core"] }
 rand.workspace = true
 colored = "3.1.1"
 chrono = { workspace = true }
 hex.workspace = true
-hmac = "0.12"
-sha2 = "0.10"
+hmac = "0.13"
+sha2 = "0.11"
 uuid = { version = "1.24.0", features = ["v4"] }
 dotenvy = "0.15"
 valayam-api = { version = "0.1.0", path = "../valayam-api" }
